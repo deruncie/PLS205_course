@@ -9,13 +9,13 @@ I highly recommend that you work the the HW problems first, and then look at the
 
 | Week | Topics                                                                                              | Lectures                     | Lab                   | HW             |
 |------|-----------------------------------------------------------------------------------------------------|------------------------------|-----------------------|----------------|
-| 1    | Introduction to Experimental Designs, Properties of a sample                                        | 1,2                          | [Labs/Lab_1](Lab 1)   | [HW/HW1](HW 1) |
-| 2    | Distributions, Confidence intervals, Hypothesis testing (t-tests)                                   | 3,4                          | [Labs/Lab_2](Lab 2)   | [HW/HW2](HW 2) |
-| 3    | Power, Subsamples, Design tables, model assumptions, multiple treatments                            | 5,6                          | [Labs/Lab_3](Lab 31)  | [HW/HW3](HW 3) |
-| 4    | Means comparisons, ANOVA, trend analysis                                                            | 7,8                          | [Labs/Lab_4](Lab 4)   | [HW/HW4](HW 4) |
-| 5    | Experimental units, data transformations                                                            | 9,10                         | [Labs/Lab_5](Lab 5)   | [HW/HW5](HW 5) |
-| 6    | Factorial experiments, treatment interactions, specific effects                                     | 11,12                        | [Labs/Lab_6](Lab 6)   |                |
-| 7    | More factorials, Plot layouts, Randomized Complete Block Designs                                    | 13,14                        | [Labs/Lab_7](Lab 7)   | [HW/HW6](HW 6) |
-| 8    | Generalized RCBD, Block:Trt interactions, crossed, nested and aliased variables, split plot designs | 15,16                        | [Labs/Lab_8](Lab 8)   | [HW/HW7](HW 7) |
-| 9    | means comparisons in split plots, incomplete block designs                                          | 17,18 (part from 2019 video) | [Labs/Lab_9](Lab 9)   | [HW/HW8](HW 8) |
-| 10   | covariates, missing data                                                                            | 19,20                        | [Labs/Lab_10](Lab 10) |                |
+| 1    | Introduction to Experimental Designs, Properties of a sample                                        | 1,2                          | [Lab 1](Labs/Lab_1)   | [HW 1](HW/HW1) |
+| 2    | Distributions, Confidence intervals, Hypothesis testing (t-tests)                                   | 3,4                          | [Lab 2](Labs/Lab_2)   | [HW 2](HW/HW2) |
+| 3    | Power, Subsamples, Design tables, model assumptions, multiple treatments                            | 5,6                          | [Lab 31](Labs/Lab_3)  | [HW 3](HW/HW3) |
+| 4    | Means comparisons, ANOVA, trend analysis                                                            | 7,8                          | [Lab 4](Labs/Lab_4)   | [HW 4](HW/HW4) |
+| 5    | Experimental units, data transformations                                                            | 9,10                         | [Lab 5](Labs/Lab_5)   | [HW 5](HW/HW5) |
+| 6    | Factorial experiments, treatment interactions, specific effects                                     | 11,12                        | [Lab 6](Labs/Lab_6)   |                |
+| 7    | More factorials, Plot layouts, Randomized Complete Block Designs                                    | 13,14                        | [Lab 7](Labs/Lab_7)   | [HW 6](HW/HW6) |
+| 8    | Generalized RCBD, Block:Trt interactions, crossed, nested and aliased variables, split plot designs | 15,16                        | [Lab 8](Labs/Lab_8)   | [HW 7](HW/HW7) |
+| 9    | means comparisons in split plots, incomplete block designs                                          | 17,18 (part from 2019 video) | [Lab 9](Labs/Lab_9)   | [HW 8](HW/HW8) |
+| 10   | covariates, missing data                                                                            | 19,20                        | [Lab 10](Labs/Lab_10) |                |
