@@ -1,0 +1,201 @@
+---
+title: "HW 8"
+output: 
+ html_notebook:
+    toc: true
+    toc_float: true
+    number_sections: true
+---
+
+```{r echo=FALSE,message=FALSE,warning=FALSE}
+library(lmerTest)
+library(pbkrtest)
+library(emmeans)
+library(multcomp)
+```
+
+> Grading Notes:
+
+> For all questions, if you get the right answer using a different approach than I use, that is fine.
+
+> Fill out the table below for each question (you can copy to another text file and fill it out there)
+Then copy the table and paste it into the comments section for the submitted assignment on Canvas.
+
+Grading table
+
+
+| Question | Points | Score |
+|----------|--------|-------|
+| 1.1      | 5      |       |
+| 1.2      | 5      |       |
+| 1.3      | 5      |       |
+| 1.4      | 5      |       |
+| 1.5      | 5      |       |
+| 1.6      | 5      |       |
+| 1.7      | 5      |       |
+| 1.8      | 5      |       |
+| Total    | 40     |       |
+
+---
+
+The following data are from a spring oats trial run in Craibstone, near Aberdeen in Scottland.
+
+24 varieties of oats were grown each grown in 3 fields (`rep`), and the yield (tonnes / ha) was assessed at the end of the season.
+Each field was divided into 6 blocks, named B1...B6.
+
+```{r}
+oats = read.csv('Oats_trials.csv')
+str(oats)
+```
+
+Your goal over the following set of questions is to identify a set of genotypes to keep / recommend for use.
+
+## 1.1 Blocks are specific to each field
+How many unique blocks are there? 
+If necessary, re-name the blocks so that they are appropriately nested in the fields.
+
+```{r}
+with(oats,table(rep,block))
+```
+
+> There are 6*3 = 18 blocks. Blocks are nested in rep's (ie Fields). So B1 in R1 is different from B1 in R2.
+
+> [5 points]
+
+## 1.2 Characterize the experimental design
+
+Start by making a model table: 
+
+**Design**: This is a type of a Lattice design, a Resolvable Incomplete block design
+
+| Structure | Variable | Type        | # levels | Experiment Unit |
+|-----------|----------|-------------|----------|-----------------|
+| Treatment | gen      | Categorical | 24       | Plot            |
+| Design    | rep      | Categorical | 3        |                 |
+|           | block    | Categorical | 18       |                 |
+|           | plot     | Categorical | 72       |                 |
+| Response  | yield    | Numeric     | 72       |                 |
+
+> [5 points]
+
+> All terms here should be listed, with correct numbers of levels.
+> Do not take off again here if # levels for block is wrong; however it should be matching with your answer in 1.1.
+You can label field as rep and vice-versa.
+> Don't worry about the name of the design!
+[-3 points] For wrong levels or missing elements. Also take off points if the number of levels of blocks does not match with your answer in 1.1. 
+
+## 1.3 This is an incomplete block design. Fill in the following:
+
+| parameter          | value |
+|--------------------|-------|
+| # treatments (t)   | 24    |
+| # blocks (b)       | 18    |
+| # reps/trt (n)     |  3    |
+| # trts / block (k) |  4   |
+
+Could this design be balanced? What is lambda (the average times each pair of treatments occur in the same block)?
+
+```{r}
+lambda = 3*(4-1)/(24-1)
+lambda
+```
+
+> This design cannot be balanced because lambda is not an integer. The average number of times
+each pair of treatments occurs in the same block is lambda ~ 0.39.
+
+> [5 points total]:
+
+> [2 points] For filling in table correctly.
+> [2 points] For correctly specifying the lambda equation with the numbers from your table. So even if you got the numbers wrong in the table, you can still get full points for getting the equation correctly.
+> [1 point] For explanation on whether or not the design is balanced, based on your lambda value.
+
+## 1.4 Make an incidence matrix for the design. 
+Use the `table` function as in Lab_9. Is the design balanced? (Hint: use the `crossprod` function)
+```{r}
+crossprod(table(oats$block:oats$rep,oats$gen))
+```
+
+> No, the design clearly is not balanced. No pair of treatments is in the same block more than once,
+but many pairs of treatments are never in the same block
+
+> [5 points total]:
+> [3 points] For the crossproduct matrix between rep and gen.
+> [2 points] For your explanation of why the cross product matrix shows that the design is unbalanced. 
+
+
+## 1.5 Is the design resolvable?
+Resolvable designs are designs in which a subset of the blocks constitutes a complete block of the treatments.
+Resolvable designs are nice because each larger block is a complete replicate of the experiment, so each super-block
+can be run separately.
+
+Identify blocks that can be resolved into a complete block. 
+**Hint**: Check the Reps!
+```{r}
+table(oats$rep,oats$gen)
+```
+
+> Yes, the design is resolvable. All treatments occur 1x in each Rep. Blocks 1-6 in each Rep constitute a complete block of the 24 genotypes.
+
+> [5 points total]:
+
+> [2.5 points] For showing that each rep (field) has 1 replicate of each genotype. This can be through a cross product matrix, a table, etc.
+> [2.5 points] For mentioning something about how the reps (fields) are resolvable. 
+
+## 1.6 Fit a linear model to the yield data. 
+Use an ANOVA to assess whether there is strong evidence for differences among the genotypes.
+
+**Note**: If you use fixed blocks, ensure that in your model and ANOVA table, blocks are included before `gen`.
+If you use `rep:block` to nest block in `rep`, then R will move the `rep:block` term to the end of the model.
+To avoid this, make a new term `unique_blocks` with a separate ID for block in each rep.
+Alternatively, declare blocks random (but be careful about nesting!).
+
+```{r}
+lme1 = lmer(yield ~ rep + (1|block:rep) + gen,oats) # order of terms doesn't matter in a lmerTest object,
+# but still good to put blocking factors first.
+# could have created a new block term: oats$nested_block = with(oats,interaction(block,rep)), and used this as the random effect
+anova(lme1,ddf='K')
+
+# alternative answer:
+anova(lm(yield ~ rep + block:rep + gen,oats))  # This model puts block:rep after gen. So its answer is wrong!
+oats$block2 = paste(oats$rep,oats$block,sep=':')
+anova(lm(yield ~ rep + block2 + gen,oats)) # This is also an acceptable answer.
+```
+
+> There is strong evidence (p ~ 1e-5) evidence that there are differences in yield among the genotypes.
+> Note: only one model is needed. But if the `lm` model is used, check that the block terms has the correct number of Df.
+
+> [5 points total]:
+
+> [2.5 points] For the correct model formulation. There are potentially two ways to model this, using a random effects model (lmer) with blocks nested within reps (block:rep), or using an lm model with a variable that is unique for each block*rep combination (block2). 
+
+> lmer model: Putting rep as a random effect for your lmer model is also ok.
+
+> lm model: You also need to get the order of variables right if you use an lm model and run an anova on it. You don’t need to worry about getting the order right for an lmer model.
+
+> [2.5 points] For your explanation based on your model. If you modeled according to the answer key, then you should mention that there is strong evidence for the difference in genotypes for yield.
+
+## 1.7 Make a Compact Letter Display to compare the genotypes.
+Identify the best-preforming genotype, and any others that can't be statistically distinguished (alpha = 0.1) from the one that performed best.
+
+```{r}
+means = emmeans(lmer(yield ~ rep + (1|block:rep) + gen,oats),specs = 'gen',ddf='K',level = 0.99)
+# means = emmeans(lm(yield ~ rep + block2 + gen,oats),specs = 'gen')
+cld(means,alpha = 0.1,level = 0.8)
+```
+
+> The answer depends slightly on whether you treat Blocks as Fixed or Random.
+> The genotype with the highest mean (emmean) is G01. 
+> With Random blocks, only G03, G09, G20 and G07 can be statistically distinguished from G01 at alpha = 0.1.
+> With Fixed blocks, only G03, G09 can be statistically distinguished from G01 at alpha = 0.1.
+
+> [5 points total]:
+
+> [2.5 points] For the cld. Your emmeans object should also be using an alpha 0.1, not 0.1.
+> [2.5 points] You need to also mention that only a few genotypes can be distinguished from the genotype with the highest mean (in this case G03, G09, G20 and G07 are distinguishable from G01 an alpha of 0.1) for full credit. Conversely, you can mention the genotypes that aren’t distinguishable. You need to get all of the distinguishable and/or undistinguishable genotypes for full credit. Otherwise [-1 point]
+
+## 1.8. In the above analysis, if you declare the blocks to be random, you should find that G02 is declared different from G09 but G04 is not. However the estimated value of G02 is closer to G09 than G04 is.
+Explain this observation. Why can we distinguish G02 and G09, but not G04 and G09 at alpha = 0.1?
+
+> The reason is that G09 and G02 are tested in the same block, but G04 and G09 are not, so the confidence interval on their difference is larger.
+
+> [5 points] For mentioning that the confidence intervals are wider for some comparisons than others. You can also say how certain combinations of genotypes are not observed in the same block, which increases our uncertainty of those comparisons.

@@ -1,0 +1,276 @@
+---
+title: "HW4"
+output: 
+ html_notebook:
+    toc: true
+    toc_float: true
+    number_sections: true
+---
+> Grading Notes:
+>
+> For questions that require a text answer:
+> Full credit: requires an answer to each question asked. Your explanations need to valid
+and logical. You don't need to use the same words as the key, but the meaning needs to be complete.
+> Assign partial credit for answers that are incomplete. For multi-part questions, divide points
+approximatly equally unless otherwise specified.
+>
+> For all questions, if you get the right answer using a different approach than I use, that is fine.
+
+> Fill out the table below for each question (you can copy to another text file and fill it out there)
+Then copy the table and paste it into the comments section for the submitted assignment on Canvas.
+
+Grading table
+
+| Question | Max  | Score |
+|----------|------|-------|
+| 1        | 4    |       |
+| 1        | 4    |       |
+| 3        | 4    |       |
+| 4        | 4    |       |
+| 5        | 4    |       |
+| 6        | 4    |       |
+| 7        | 4    |       |
+| 8        | 4    |       |
+| 9        | 4    |       |
+| 10       | 4    |       |
+| Total    | 40   |       |
+
+When you are done:
+
+1. Select 'Run All' from the 'Run' dropdown menue.
+2. Save (File -> Save)
+3. Click 'Preview' to bring up the `HW1.nb.html` file. Check through this to make sure it rendered correctly.
+4. Upload the `HW1.nb.html` to Canvas.
+
+
+Necessary libraries
+```{r echo = F}
+library(ggplot2)
+library(emmeans)
+library(lme4)
+library(lmerTest)
+library(car)
+```
+
+
+To study the effect of burial time on germination and dormancy of *Hordeum murinum ssp. leporinum* (Hare Barley), 
+overwintering seeds were placed in bags in a field, and then removed and tested at six time intervals (0, 30, 60, 90, 120, and 150 days after burial). The design was a completely randomized design, with 5 replicate bags per burial time.
+Each bag contained 200 seeds. At the designed time, each bag was opened, and then the seeds were split evenly between two 
+germination trays, and the number of germinating seeds was measured in each tray.
+
+
+```{r echo = FALSE}
+# Ensure the data file is in the same directory as this document
+germinant_data = read.csv('Germination.csv')
+str(germinant_data)
+```
+
+## 1 Describe the design of this experiment in detail.
+
+**Design**: Completely randomized design
+
+| Structure | Variable   | Type        | # levels | Experimental Unit |
+|-----------|------------|-------------|----------|-------------------|
+| Treatment | Days       | Numeric/Cat | 6        | Bag               |
+| Design    | Bag        | Categorical | 30       |                   |
+| Design    | Tray       | Categorical | 60       |                   |
+| Response  | Germinants | Numeric     | 60       |                   |
+
+> Key things are the experimental unit and the # of levels. It is OK if the names are different
+as long as it is clear what each name refers to. The variable Days in the Treatment structure can be type numeric and/or categorical.
+
+> (4 points)
+
+# For the first set of analyses, treat **Days** as a factor
+
+## 2 Use a boxplot to visualize the dose-response curve (ie the number of Germinants observed each Day).
+Does there appear to be an effect of age (Date) on number of germinating seeds?
+
+> **Note**For visualization, refer back to the visualization techniques in Lab3 when there were subsamples.
+> You should be able to use the same code, just be sure to change all the variable names to match the new dataset
+> Be sure to make a new variable called something like `DaysFactor`
+
+```{r}
+library(ggplot2)
+germinant_data$DaysFactor = factor(germinant_data$Days)
+germinant_data$Bag = factor(germinant_data$Bag)
+germinant_means = aggregate(Germinants ~ DaysFactor+Bag,germinant_data,FUN = mean)
+ggplot(germinant_data,aes(x=DaysFactor,y=Germinants)) + 
+  geom_boxplot(data=germinant_means) +  
+  geom_point(data = germinant_means,aes(fill = Bag),color = 'red',position = position_jitterdodge(),size = 3) +
+  geom_point(data = germinant_data, aes(fill = Bag),position = position_jitterdodge()) + 
+  theme(legend.position = 'none') 
+```
+
+## 3 Assess whether the linear model assumptions are satisfied by the data.
+Treat **Days** as a factor. Use diagnostic plots.
+
+> **Note** Here again, refer to Lab 3 for appropriate diagnostic plots. 
+> Again, the same code should work as long as you are careful to change all variable names
+
+```{r}
+library(lmerTest)
+library(car)
+factor_model <- lmer(Germinants~DaysFactor + (1|Bag),germinant_data)
+
+# Step 1: Extract estimates of the experimental unit deviations
+eu_data = aggregate(Germinants ~ DaysFactor+Bag,germinant_data,FUN = mean)
+  # this is like above - we're generating a new table with one row per plot
+  # you'll have to adapt this for other experiments with other Variables
+eu_data$deviation = ranef(factor_model)$Bag[eu_data$Bag,1] 
+  # The key above is to substitute `Plot` for the name of your random experimental unit term above in both places
+eu_data$fitted = predict(factor_model,newdata = eu_data,re.form = ~0)
+  # This line you can use directly
+
+# Step 2: Make QQplot and `Scale-Location` plot:
+op = par(mfrow=c(1,2))  # two plots side-by-side
+qqPlot(eu_data$deviation,main = 'Plot (EU) Normal Q-Q',pch=19)  # new qqplot function
+scatter.smooth(eu_data$fitted,sqrt(abs(eu_data$deviation)),span = 1,main = 'Scale-Location',ylab = expression(sqrt(abs(' deviations '))),xlab = 'Fitted values')
+```
+
+> Yes, the residuals are consistent with a normal distribution, and variances appear approximately equal in each group.
+
+> You need to show both the QQ-plot and a plot that shows the variances between groups (scale-location, boxplot, residuals vs. fitted values, etc.)
+
+> (4 points): 2 points for QQ-plot and 2 points for a plot that shows variances between groups.
+
+
+
+> Yes, fewer germinants on later Days. Maybe a bit of saturating of the response after long times (note 360 is 2x 180)
+
+> (4 points): 3 points for the boxplot (or a similar visualization), and 1 point for noting that there is an effect of days on the number of germinants.
+
+## 4 Test (provide p-values as evidence) if any of extended germination times change germination rate relative to zero days
+
+> **Note** Refer to Lab3 for correct usage of `emmeans()` with `lmer()` models.
+
+```{r}
+library(emmeans)
+factor_means = emmeans(factor_model,specs = 'DaysFactor', lmer.df = 'k')
+factor_differences <- contrast(factor_means,'trt.vs.ctrl',ref=1)
+summary(factor_differences,infer=c(F,T))
+```
+
+> Yes, there is strong evidence of an effect for all times after 30 days.
+
+> We are looking for pairwise comparisons with 0 days using emmeans.
+
+> (4 points)
+
+## 5 Use an ANOVA to assess the evidence for any effect of time germination rate
+Is there strong evidence for a difference in germination rate by seed age?
+
+> **Note**. The ANOVA table produced by the `lmer()` function looks a bit different from that of the `lm()` function.
+> But all the same information is there, and it should be clear how to interpret
+> You should add the argument `ddf = 'Kenward-Roger'` whenever you do `anova()` with a `lmer()` model
+
+```{r}
+anova(factor_model,ddf = 'Kenward-Roger',type='I')
+```
+
+> Yes - treating Days as a factor and testing if any treatment (Date) is different than any other
+in an ANOVA, we find very strong evidence against H0 (no effect).
+
+> Alternatively, you could fit a polynomial of degree 5, or use the pairwise Tukey test with emmeans.
+
+> (4 points) 
+
+## 6 Explain the following features of the ANOVA table
+
+1. The Df of the treatment and Experimental Units
+
+> Degrees of freedom
+> DfT = 6-1 (6 different lengths of times). DfE = 6*(5-1) = 24 (6 treatments, each with 5 reps). 2 point for df of treatment and 2 point for df of residuals for 2 points total.
+> You can also give a conceptual explanation for degrees of freedom. For instance, df of the treatment is k - 1 and df of the residuals is k x (n - 1). 
+> (4 points)
+
+2. *The relationship between MSE from the ANOVA and SE from each of the contrasts aginst the control above* 
+**Note** Question 6.2 was poorly created. It turns out that the `Sum Sq` and `Mean Sq` columns of the ANOVA table for `lmer()` models
+has a different meaning than for `lm()` models. 
+The remaining columns are as we expect (`NumDF` == DfT, `DenDF` == DfE, `F value` is the importance of each treatment parameter relative to the error, and `Pr(>F)` is the p-value associated with the Treatment model).
+However, extracting the MSE that we need to calculate standard errors is a bit more complicated.
+In this simple experiment, we CAN do it by hand:
+From class on Tuesday, we calculated the components of variance for experimental units in an experiment with subsamples:
+sigma2 = sigma2_EU + sigma2_sub/n_sub.
+We can extract these by running:
+```{r}
+VarCorr(factor_model)
+```
+From this we see that the estimates are: s2_EU = 7.3912^2 and s2_sub = 4.8546^2, so s2 = 66.41239
+From this, we can estimate SED = sqrt(s2/n1 + s2/n2) + sqrt(2*66.41239/5) = 5.14, which is the SE reported by emmeans.
+
+This works in simple models like this, but gets much more difficult with more complex models, and especially when the number of replicates per level is different.
+**Fortunately, `emmeans` is able to do this for us!**
+
+
+## 7 Predict the number of germinants on day 80.
+To do this, follow the following steps:
+
+### 8 Fit a trend model to the data.
+```{r}
+lm_trend <- lmer(Germinants ~ Days + I(Days^2) + I(Days^3) + I(Days^4) + I(Days^5) + (1|Bag),germinant_data)
+#lm_trend <- lmer(Germinants ~ poly(Days,5) + (1|Bag),germinant_data) # this is a more condense form for a trend model.
+```
+
+> (4 points) For this question, you should fit a degree=5 polynomial. If possible, always fit and evaluate a full-degree polynomial first.
+Then use diagnostics and ANOVA to reduce. You can use either notation to fit the model. (-2) for models with less than degree=5.
+
+### 9 Decide on the trend degree that provides the most robust fit to the data
+- If the chosen degree is the maximum possible, then state that you cannot predict intermediate dates because the trend is too complex.
+- If you chose a degree less than maximum, fit this model separately and use it for your predictions
+
+> **Note** One final difference for `anova()` with `lmer()` objects. 
+> We will generally include the argument `type='I'`. 
+> This makes the "sequential" ANOVA discussed in class that is useful for model comparison. 
+> Use that argument here.
+
+```{r}
+anova(lm_trend,type='I',ddf = 'S')
+lm_trend_2 <- lmer(Germinants ~ Days + I(Days^2) + (1|Bag),germinant_data)
+```
+
+> I chose a degree-2 polynomial. The degree 3-5 terms all explain a very small amount of SS's relative to the degree 1 and 2 terms.
+This means these terms are relatively unimportant in the model, and we can get a more robust fit 
+by dropping them. Also, note their p-values are fairly large. You can get the same p-values with lm_trend2 using the summary() function.
+
+> (4 points) You can receive full credit for choosing a polynomial of degree other than 2, as long as your justification is valid. This is always a 
+judgement call based on your objectives. But your arguments do have to be valid. It is fine if you fit models with the above notation (Days + I(Days^2)) or poly(Days, 2). If you are unsure, ask.
+
+### Make diagnostic plots for your chosen model
+```{r}
+
+# Step 1: Extract estimates of the experimental unit deviations
+eu_data = aggregate(Germinants ~ Days+Bag,germinant_data,FUN = mean)
+  # this is like above - we're generating a new table with one row per plot
+  # you'll have to adapt this for other experiments with other Variables
+eu_data$deviation = ranef(lm_trend_2)$Bag[eu_data$Bag,1] 
+  # The key above is to substitute `Plot` for the name of your random experimental unit term above in both places
+eu_data$fitted = predict(lm_trend_2,newdata = eu_data,re.form = ~0)
+  # This line you can use directly
+
+# Step 2: Make QQplot and `Scale-Location` plot:
+op = par(mfrow=c(1,2))  # two plots side-by-side
+qqPlot(eu_data$deviation,main = 'Plot (EU) Normal Q-Q',pch=19)  # new qqplot function
+scatter.smooth(eu_data$fitted,sqrt(abs(eu_data$deviation)),span = 1,main = 'Scale-Location',ylab = expression(sqrt(abs(' deviations '))),xlab = 'Fitted values')
+```
+
+> The diagnostics still look good.
+
+> You need to show both the QQ-plot and a plot that shows the variances between groups (scale-location, boxplot, residuals vs. fitted values, etc.)
+
+> (4 points): 2 points for QQ-plot and 2 points for a plot that shows variances between groups.
+
+### 10 Predict the mean germination rate on Day 80 and form a 90% confidence interval around this prediction
+- To do this, you must extract the standard error of your estimate. 
+- Since you're making a prediction at a single point, use the t-distribution for the interval
+    
+```{r}
+estimate_mean = emmeans(lm_trend_2,spec = 'Days',at=list(Days=80), lmer.df = 'k')
+summary(estimate_mean,level = 0.9,infer = c(T,F))
+```
+
+> (4 points) A 90% confidence interval is 57 +/- 1.97 * 1.31 germinants, or between 53.71 and 60.4 germinants. Rounded answers are also fine. 
+
+> Units are important but don't take off credit for answers without units. But for future reference please put units for all your estimates (where applicable).
+
+

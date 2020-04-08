@@ -1,0 +1,115 @@
+---
+title: "HW6"
+output: 
+ html_notebook:
+    toc: true
+    toc_float: true
+    number_sections: true
+---
+Use this R Notebook document to answer the questions and document your work. 
+Enter the R code used to answer each question in the corresponding R code chunk. 
+Write any textual explanations **outside** of the chunks. When we grade, we will *hide* the code and just look at the R output and your written answers.
+Attempt to clean up your code as much as possible so that only the necessary lines remain. 
+
+When you are done:
+
+1. Select 'Run All' from the 'Run' dropdown menue.
+2. Save (File -> Save)
+3. Click 'Preview' to bring up the `HW1.nb.html` file. Check through this to make sure it rendered correctly.
+4. Upload the `HW1.nb.html` to Canvas.
+
+
+Necessary libraries
+```{r echo = F,message=FALSE, warning=FALSE} 
+# Necessary pacakges 
+library(ggplot2) 
+library(emmeans)
+# the following 4 packages are new. You may have to install these using install.packages(c('car','lme4','lmerTest','pbkrtest'))
+library(car)
+library(lme4)
+library(lmerTest)
+library(pbkrtest)
+```
+
+## Question 1
+
+A researcher was interested in examining the effect of pasture species composition on beta-carotene content in eggs of pastured poultry. 
+She evenly divided each of four fields into five sections and overseeded each section with one of the following: 
+1) annual rye (grass); 2) fescue (grass); 3) white clover (legume); 4) vetch (legume); or, 5) clover/fescue mix. 
+A separate flock of 10 birds was put out in each section. 
+After one-week, eggs from each flock were collected daily and combined for determining beta-carotene content of the yolks. 
+These values in $\mu g/g$ were averaged after 10 days and are presented below. 
+
+| Field | P1 - Rye | P2 - Fescue | P3 - Clover | P4 - Vetch | P5 - Mix |
+|:-----:|:--------:|:-----------:|:-----------:|:----------:|:--------:|
+|   F1  |   3.63   |     3.49    |     3.84    |    4.60    |   5.32   |
+|   F2  |   3.81   |     4.30    |     4.65    |    5.50    |   4.79   |
+|   F3  |   2.97   |     3.26    |     4.16    |    3.85    |   5.13   |
+|   F4  |   4.08   |     4.15    |     4.19    |    5.06    |   4.52   |
+
+```{r echo=FALSE}
+data_1 = read.csv('egg_carotene.csv')
+str(data_1)
+```
+
+### 1.1 Describe the design of this experiment in detail.
+
+**Design**: 
+**Response**: 
+
+| Structure | Variable | Type        | # levels | Experimental Unit |
+|-----------|----------|-------------|----------|-------------------|
+|           |          |             |          |                   |
+|           |          |             |          |                   |
+|           |          |             |          |                   |
+|           |          |             |          |                   |
+
+> ENTER YOUR RESPONSE HERE
+
+
+### 1.2 Assess whether the assumptions of a linear model are adequately satisfied. Is a transformation needed?
+    
+```{r}
+```
+
+> ENTER YOUR RESPONSE HERE
+
+### 1.3 Estimate the differences between all pairs of pasture covers. Include appropriate units based on your choice of transformation (or no transformation)
+
+```{r}
+```
+
+> ENTER YOUR RESPONSE HERE
+
+### 1.4 Is there any evidence of an interaction between Field and Species cover? ie. do differences among covers change across the fields?
+Is the interaction replicated? If not, you can't answer this question with an ANOVA, but you can tentatively assess with an interaction plot. 
+```{r}
+```
+
+> ENTER YOUR RESPONSE HERE
+
+
+### 1.5 Did the researcher gain information by utilizing a RCBD relative to a CRD where the sections of all fields were randomized together?
+```{r}
+```
+
+> ENTER YOUR RESPONSE HERE
+
+### 1.6 Instead of randomizing all 5 plots on the 4 fields together, speculate on the efficiency had she used only one field.
+In this case, to maintain the same replication, she would divide it into 20 smaller plots, and use only 2 birds per plot (instead of 10).
+Speculate on how the MSE would compare to the original RCBD, or the CRD over the four fields. 
+**Is there any advantage to spreading the experiment over 4 fields** Is there any disadvantage?
+
+> ENTER YOUR RESPONSE HERE
+
+### 1.7 Add 1 $\mu g/g$ to each value in Field F4. Does this produce any effect on the SS_Pasture, MS_Pasture, or F-value? Explain why or why not in one sentence.
+In this case (with Field F4 being much more productive), did the importance of Blocking increase or decrease?
+
+The following code makes a modifed dataset with the increase of 1 in the Beta values for Field F4
+
+```{r}
+data_2_modified = data_1
+data_2_modified$Beta[data_2_modified$Field == 'F4'] = data_2_modified$Beta[data_2_modified$Field == 'F4'] + 1
+```
+
+> ENTER YOUR RESPONSE HERE

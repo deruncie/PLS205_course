@@ -1,0 +1,403 @@
+---
+title: "Lab 2 - Analysis of a simple experiment"
+author: Daniel Runcie. Modified from labs designed by Iago Hale, Dario Cantu and Jorge
+  Dubcovsky
+date: "January 19, 2016"
+output:
+  html_notebook:
+    toc: true
+    toc_float: true
+---
+
+This lab shows you how to analyze a very simple experiment - an experiment with 
+only 2 treatments, and a Completely Randomized Design (CRD).
+
+We will:
+
+- Describe the experimental design and make the design table
+- Format and load the data
+- Fit a model
+- Run model diagnostics
+- Extract treatment effect estimate, make a confidence interval, calculate a p-value
+
+------------------------------------------------------------------------------------------
+
+## Necessary libraries
+These libraries are needed for this lab:
+```{r}
+library(ggplot2)
+library(emmeans)
+```
+
+If either package is not installed on your computer, you can use the package manager window in Rstudio 
+to install.
+
+
+## Experiment
+
+An experiment was run to compare the amount of malt extract that could be collected from 
+two varieties of barley. Barley samples from 14 fields growing each variety were collected
+and the concentration of malt extract was measured in each sample. The raw data is  included
+in the file: `Barley_data_wide.csv`, and presented below:
+
+| Sample | 1    | 2    | 3    | 4    | 5    | 6    | 7    | 8    | 9    | 10   | 11   | 12   | 13   | 14   |
+|--------|------|------|------|------|------|------|------|------|------|------|------|------|------|------|
+| Var1   | 77.7 | 76   | 76.9 | 74.6 | 74.7 | 76.5 | 74.2 | 75.4 | 76   | 76   | 73.9 | 77.4 | 76.6 | 77.3 |
+| Var2   | 79.5 | 77.3 | 77.9 | 75   | 74   | 75.9 | 73.5 | 76.3 | 77.8 | 77.4 | 75.7 | 79.3 | 76.8 | 78.7 |
+
+## Design table
+The first step in analyzing data from an experiment is to fill in an experimental design table.
+This ensures that you understand how the experiment was run, and helps you organize your analysis.
+
+The design table asks you to identify and describe the experimental variables that compose the 
+**Treatment**, **Design** and **Response** structures of the experiment.
+
+For each variable, declare its **name**, whether it is **Numeric or Categorical**, 
+the **number of levels**, or unique values of the variable in the experiment, and for treatment effects
+to identify the **experimental unit** for the treatment.
+
+The table for this experiment looks like this:
+
+| Structure | Variable | Type    | # levels | Experimental Unit |
+|-----------|----------|---------|----------|-------------------|
+| Treatment | Variety  | Factor  | 2        | Field             |
+| Design    | Field    | Factor  | 28       |                   |
+| Response  | Malt     | Numeric | 28       |                   |
+
+Notes:
+
+- The Type of the Response variable is always **Numeric**
+- The # levels of the response variable is always the number of observations in your data
+- Design and Response variables do not have experimental units. This means that we won't calculate
+confidence intervals or p-values for these variables.
+- The variable names should correspond to the column names in the data file.
+
+
+
+------------------------------------------------------------------------------------------
+
+## Data entry
+
+### Formatting data
+
+It's often convenient to present raw data in a table like above. However, this is not a
+convenient format for data in R. R expects data to be in *long* or *tall* format 
+which means a separate line for each observation, with a column for each characteristic (ex. ID, Block, Treatment, Measurement):
+
+| Field | Variety | Malt |
+|-------|---------|------|
+| 1     | Var1    | 76   |
+| 2     | Var2    | 73.5 |
+| 3     | Var2    | 79.3 |
+| 4     | Var2    | 76.8 |
+| 5     | Var2    | 77.4 |
+
+> **Excercise**: Open the `Barley_data_wide.csv` file in Excel, and re-format it into the long/tall
+> format. Save the file as `Barley_data_tall.csv`
+> 
+> Note: The wide format did not include a value for Field. You can assign any unique value to the Field
+> column in your data. In general, it is a good idea to assign a unique value to each observation
+> as you collect your data
+
+In general, transforming data from *wide* to *long* or *tall* format can be tricky, and is very dataset-specific. So in this course going forward we'll always provide you with already formatted `csv` or `tab`-delimited text files ready to read in to R. 
+
+### Loading data in R
+
+Now that you have a properly formatted data file, we need to load the data into R.
+
+The general functions for reading data into R are `read.csv`, `read.table` and `read.delim`. Look at their help pages. They're actually the same functions but with different default settings, mostly about what character separates data values. There are a lot of options that you can specify, but the most important are:
+
+- `file` The file name. If the file is in the same directory as your RNotebook file, just enter the file name in quotes (including the extension)
+- `header = TRUE` Should R assume that the first line is a set of column names, rather than data? It's a good idea to always set this yourself. The default for `read.csv` and `read.delim` is TRUE
+- `sep` The character that separates columns in each row. The default for `read.csv` is `,` (a comma). The default for `read.delim` is `" "` (a space). We'll mostly give you data that is comma separated (csv)
+- `na.strings` R's default for missing data is `NA`. 
+
+The output, or **return value** of these functions is an R object called a `data.frame`. Look at the help page. `data.frame`s are tables with columns that correspond to the columns in your `csv` file. 
+
+```{r}
+barley_data_tall = read.csv('Barley_data_tall.csv')  
+```
+
+Once the data is loaded, you must check to see that it has loaded correctly.
+
+There are several ways to view the data:
+
+1. Simply type the name of the variable. RNotebooks will give you a formatted table
+```{r}
+barley_data_tall
+```
+
+2. Use the function `str` to get a concise summary of the data
+```{r}
+str(barley_data_tall)
+```
+
+You can access specific columns of the data using the column name and the `$` character:
+```{r}
+barley_data_tall$Variety
+```
+
+You can access specific subsets of the data using logical commands:
+```{r}
+barley_data_tall$Malt[barley_data_tall$Variety == 'Var1']
+```
+This pulls out the `Malt` values only for the observations that came from `Var1`.
+
+### Compare data table to the design table
+Use the design table to ensure that the data is loaded correctly. Here is the design table again:
+
+| Structure | Variable | Type    | # levels | Experimental Unit |
+|-----------|----------|---------|----------|-------------------|
+| Treatment | Variety  | Factor  | 2        | Field             |
+| Design    | Field    | Factor  | 28       |                   |
+| Response  | Malt     | Numeric | 28       |                   |
+
+and here is the concise data table summary:
+
+```{r}
+str(barley_data_tall)
+```
+
+Check these things:
+
+- Are all Variables present in the data (and named correctly)?
+- Is the Type correct? 
+    - **Categorical** variables should be either **chr** or **Factor**. 
+    - **Numeric** variables should be either **num** or **int**
+- Do all Variables have the correct number of levels? Note: The number of levels of the Response
+should equal the number of observation in the data
+
+> **Question** What is wrong about the data.table?
+
+#### If the type is wrong:
+
+Convert Numeric to Categorical:
+```{r}
+barley_data_tall$Field = as.factor(barley_data_tall$Field)
+```
+
+Convert Categorical data to Numeric:
+(`Malt` probably loaded as numeric unless you have a typo, but just in case ...)
+```{r}
+barley_data_tall$Malt = as.numeric(as.character(barley_data_tall$Malt))
+```
+
+(R note: never convert **factors** directory to numbers. Convert to characters first. Otherwise you can get some really weird results)
+
+#### If the number of levels is wrong:
+Chances are, the same ID was re-used. For example, was `Field 1` used for the 1st field of `Var1` 
+and also for the 1st field of `Var2`? Are these really the same field? Or should you call them
+`Field 1.1` and `Field 2.1`? We will come back to this concept and provide code for fixing 
+data like this later. For now, I'd recommend being careful in data entry to always give unique IDs.
+
+------------------------------------------------------------------------------------------
+
+## Analyzing the data
+
+Data analysis in R consists of three steps:
+
+1. Fit a model to the data
+2. Run model diagnostics to check model assumptions
+3. Use the model fit to calculate summary statistics and draw conclusions
+
+
+## Fitting a model
+In lecture, we used the `t.test` function to run a t-test for an experiment with two treatments.
+Here, we will use the function `lm` instead. This function is much more powerful than `t.test`
+and we can use it to analyze more complicated experiments.
+
+
+### The lm function
+
+The `lm()` function is extremely powerful and is built to be able to do much more complex analyses than we'll use it for today (or this class). 
+The general form for its use is:
+
+`lm(y~model,data=data_table)`
+
+Where `data_table` is a `data.frame` in the **tall** format (one row per observation), 
+with columns for `y` (the dependent or response variable), and for **terms** in the model. 
+`model` is a set of codes describing the statistical model you're using.
+
+
+A `model` is a way to explain the variation in the data: `data$Extract` given the provided information about each observation. 
+Here, that *information* is the Variety of each plant: `data$Variety`. A model has two components:
+
+- explanatory component (treatment effects, or effects of blocks, etc, controlled by the experiment)
+- error component (variation among experimental or observational units that is not controlled)
+
+With a simple completely randomized experiment, the only explanatory component is the treatment
+and the error component is simply the variation among experimental units.
+
+We can tell `R` to fit this model like this:
+```{r}
+model_1 <- lm(Malt ~ Variety, data = barley_data_tall)  # fit the model
+model_1  # git a quick summary of the fit to make sure it worked
+```
+
+## Model diagnostics
+
+Before looking at the results, we should view the data and model diagnostics. The goal of this
+excercise is to:
+
+1. Get a general idea if you can see trends in the data that look interesting
+2. Assess normality within-groups and heteroscadisticity (ie equal variances) among groups.
+
+To view the raw data, we can use a boxplot / jitter-plot
+```{r}
+library(ggplot2)
+ggplot(barley_data_tall,aes(x=Variety,y = Malt)) + geom_boxplot() + geom_jitter(width = .2)
+```
+
+> Does it look like there is an effect of the variety on Malt extract?
+> Does it look like the within-group variances are approximately the same?
+
+The `plot` function has special methods for creating diagnostic plots for models fit using the 
+`lm` function
+The two assumptions that we are most interested in are:
+
+- Do the populations have the same variance? This is important for allowing us to get a pooled estimate $s^2$
+- Are the **residuals** normally distributed? The **residuals** are the deviations of experimental units from the treatment means.
+
+We can assess these assumptions using diagnostics built into the `lm()` function by using `plot()`
+```{r}
+par(mfrow=c(1,2))  # necessary to get two plots next to each other
+plot(model_1,which = c(2,5)) # there are several diagnostic plots that R can make. For simple experiments, these two are good.
+```
+The first plot is a Normal Q-Q plot used to assess normality. The residuals lie very well on the one-to-one line, suggesting no problems there.
+
+The second plot shows the residuals for each of the Varieties, and can be used to see if the variances of the groups are diffent from each other. Var 2 may be slightly more variable than Var 1, so we might want to keep this in mind when we make confidence intervals. But overall, the data look consistent with our assumptions
+
+## Extracting estimates and confidence intervals
+Now that we have fit a model, we want to use it to produce estimates of treatment means, effects, and confidence intervals.
+
+This is the work of the `emmeans` function
+
+To calculate treatment means and confidence intervals, do this:
+```{r}
+library(emmeans)  # load the  emmeans package
+means_model1 <- emmeans(model_1,spec = 'Variety') # prep the emmeans
+summary(means_model1,level = 0.95, infer = c(T,F)) # show confidence intervals
+```
+
+We can also use this function to calculate treatment differences
+```{r}
+differences_model1 <- contrast(means_model1,'pairwise')  # contrast means a comparison among groups
+summary(differences_model1,level = 0.95,infer = c(T,F)) 
+```
+
+And we can perform a hypothesis test against the null hypothesis that the true difference is zero:
+
+```{r}
+summary(differences_model1,level = 0.95,infer = c(F,T))  # note we switched from infer=c(T,F) above to infer = c(F,T) here, to switch between CIs and p-values
+```
+
+
+
+------------------------------------------------------------------------------------------
+
+
+## Power analysis of a two-treatment experiment (t-test)
+
+Separate from the analysis of actual data it can be useful to run a power analysis to assess
+whether your experimental design is likely to be recover a significant effect of treatments
+if the differences were of a particular size.
+
+To run a power analysis for a two-treatment experiment, you need to know:
+
+1. The within-group variation
+2. The alpha-level of your test (your false-positive threshold)
+3. The minimum effect size that you would deem intersting.
+
+(2) and (3) are numbers that you as a researcher can deside. But (1) is a problem because
+we don't know this beforehand. We could run a trial experiment to assess this, but we this estimate
+will not be perfect. 
+
+A function to calculate the power of a t-test in R is: `power.t.test`. Look at the help page. The key parameters are:
+
+- `n` the number of samples **per group**. This only works if the two groups have the same number of samples
+- `delta` the **true** difference between the means (or the difference you want)
+- `sd` the **true** standard deviation of both groups (assuming their SD is the same)
+- `sig.level` the desired Type I error probability
+- `power` the desired power (1-TypeII error probability)
+- `type` 'one.sample', 'two.sample' or 'paired'
+- `alternative` 'two.sided' or 'one.sided'
+
+To use the function, you must enter a value for all of these, 
+except choose one of `n`, `delta`, `power`, `sd`, or `sig.level` to set to `NULL`. 
+The function will calculate this value for you given what you entered for the rest.
+
+We first have to decide on `delta`. What difference is biologically interesting? Let's say a difference of 1mg is interesting 
+```{r}
+delta = 1
+```
+
+In this case, since we don't have anything else, we'll use the existing barley data from above to 
+estimate the within-group variation. The power analysis isn't very useful for the experiment
+we just ran, but we could use the result to assess how large an experiment we should run if we were
+to do it again.
+
+To estimate the within-group variance, we can estimate the variance from each variety and then pool them:
+
+```{r}
+Var1_data <- barley_data_tall$Malt[barley_data_tall$Variety == 'Var1']
+Var2_data <- barley_data_tall$Malt[barley_data_tall$Variety == 'Var2']
+
+var1 = var(Var1_data)
+var2 = var(Var2_data)
+n_var1 = sum(barley_data_tall$Variety == 'Var1') # get sample sizes for each variety.
+n_var2 = sum(barley_data_tall$Variety == 'Var2')
+
+pooled_var = ((n_var1-1)*var1 + (n_var2-1)*var2) / ((n_var1-1) + (n_var2-1))
+pooled_var
+```
+
+We could also extract this number from the model we fit above:
+```{r}
+summary(model_1)$sigma^2
+```
+
+
+Now, we have to chose our `sig.level` or $\alpha$. Lets go with $\alpha = 0.05$:
+```{r}
+alpha = 0.05
+```
+
+Finally, let's run the power calculation:
+```{r}
+power.t.test(
+  n = 14,
+  delta = 1,
+  sd = sqrt(pooled_var),
+  sig.level = 0.05,
+  power = NULL,
+  type = 'two.sample',
+  alternative = 'two.sided'
+)
+```
+
+> Is this a reasonable power for this experiment?
+
+You can use the same function to calculate the number of samples required to achieve a certain power:
+
+```{r}
+n <- power.t.test(
+  n = NULL,
+  delta = 1,
+  sd = sqrt(pooled_var),
+  sig.level = 0.05,
+  power = 0.8,
+  type = 'two.sample',
+  alternative = 'two.sided'
+)$n   # Note: the addition of $n here restricts the output to only the $n slot of the function's output.
+n
+```
+
+### Questions
+
+> How much smaller a difference could you detect (with power > 80%) if your sample size was 28 instead of 14 (with alpha = 0.05 and sd = 1.5)
+> Assume delta = 1, and you choose alpha = 0.05. 
+>    Would it be better to increase sample size from 14-28 if it meant including more variable individuals (so var goes from 2.5 to 5.0)?
+
+---
+
+

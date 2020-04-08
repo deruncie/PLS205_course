@@ -1,0 +1,144 @@
+---
+title: "HW4"
+output: 
+ html_notebook:
+    toc: true
+    toc_float: true
+    number_sections: true
+---
+
+When you are done:
+
+1. Select 'Run All' from the 'Run' dropdown menue.
+2. Save (File -> Save)
+3. Click 'Preview' to bring up the `HW4.nb.html` file. Check through this to make sure it rendered correctly.
+4. Upload the `HW4.nb.html` to Canvas.
+
+
+Necessary libraries
+```{r echo = F}
+library(ggplot2)
+library(emmeans)
+library(lme4)
+library(lmerTest)
+library(car)
+```
+
+
+To study the effect of burial time on germination and dormancy of *Hordeum murinum ssp. leporinum* (Hare Barley), 
+overwintering seeds were placed in bags in a field, and then removed and tested at six time intervals (0, 30, 60, 90, 180, and 360 days after burial). The design was a completely randomized design, with 5 replicate bags per burial time.
+Each bag contained 200 seeds. At the designed time, each bag was opened, and then the seeds were split evenly between two 
+germination trays, and the number of germinating seeds was measured in each tray.
+
+
+```{r echo = FALSE}
+# Ensure the data file is in the same directory as this document
+germinant_data = read.csv('Germination.csv')
+str(germinant_data)
+```
+
+## 1 Describe the design of this experiment in detail.
+
+**Design**: Completely randomized design
+
+| Structure | Variable   | Type        | # levels | Experimental Unit |
+|-----------|------------|-------------|----------|-------------------|
+|           |            |             |          |                   |
+|           |            |             |          |                   |
+|           |            |             |          |                   |
+|           |            |             |          |                   |
+
+> ENTER YOUR RESPONSE HERE
+
+# For the first set of analyses, treat **Days** as a factor
+
+## 2 Use a boxplot to visualize the dose-response curve (ie the number of Germinants observed each Day).
+Does there appear to be an effect of age (Date) on number of germinating seeds?
+
+> **Note** For visualization, refer back to the visualization techniques in Lab3 when there were subsamples.
+> You should be able to use the same code, just be sure to change all the variable names to match the new dataset
+> Be sure to make a new variable called something like `DaysFactor`
+
+```{r}
+```
+
+> ENTER YOUR RESPONSE HERE
+
+## 3 Assess whether the linear model assumptions are satisfied by the data.
+Treat **Days** as a factor. Use diagnostic plots.
+
+> **Note** Here again, refer to Lab 3 for appropriate diagnostic plots. 
+> Again, the same code should work as long as you are careful to change all variable names
+
+```{r}
+
+```
+
+> ENTER YOUR RESPONSE HERE
+
+## 4 Test (provide p-values as evidence) if any of extended germination times change germination rate relative to zero days
+
+> **Note** Refer to Lab3 for correct usage of `emmeans()` with `lmer()` models.
+
+```{r}
+```
+
+> ENTER YOUR RESPONSE HERE
+
+## 5 Use an ANOVA to assess the evidence for any effect of time germination rate
+Is there strong evidence for a difference in germination rate by seed age?
+
+> **Note**. The ANOVA table produced by the `lmer()` function looks a bit different from that of the `lm()` function.
+> But all the same information is there, and it should be clear how to interpret
+> You should add the argument `ddf = 'Kenward-Roger'` whenever you do `anova()` with a `lmer()` model
+
+```{r}
+```
+
+> ENTER YOUR RESPONSE HERE
+
+## 6 Explain the following features of the ANOVA table
+
+1. The Df of the treatment and Experimental Units
+2. The relationship between MSE from the ANOVA and SE from each of the contrasts aginst the control above
+
+> ENTER YOUR RESPONSE HERE
+
+## 7 Predict the number of germinants on day 80.
+To do this, follow the following steps:
+
+### 8 Fit a trend model to the data.
+```{r}
+```
+
+> ENTER YOUR RESPONSE HERE
+
+### 9 Decide on the trend degree that provides the most robust fit to the data
+- If the chosen degree is the maximum possible, then state that you cannot predict intermediate dates because the trend is too complex.
+- If you chose a degree less than maximum, fit this model separately and use it for your predictions
+
+> **Note** One final difference for `anova()` with `lmer()` objects. 
+> We will generally include the argument `type='I'`. 
+> This makes the "sequential" ANOVA discussed in class that is useful for model comparison. 
+> Use that argument here.
+
+```{r}
+```
+
+> ENTER YOUR RESPONSE HERE
+
+### Make diagnostic plots for your chosen model
+```{r}
+```
+
+> ENTER YOUR RESPONSE HERE
+
+### 10 Predict the mean germination rate on Day 80 and form a 90% confidence interval around this prediction
+- To do this, you must extract the standard error of your estimate. 
+- Since you're making a prediction at a single point, use the t-distribution for the interval
+    
+```{r}
+```
+
+> ENTER YOUR RESPONSE HERE
+

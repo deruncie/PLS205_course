@@ -1,0 +1,110 @@
+---
+title: "HW 8"
+output: 
+ html_notebook:
+    toc: true
+    toc_float: true
+    number_sections: true
+---
+
+```{r echo=FALSE,message=FALSE,warning=FALSE}
+library(lmerTest)
+library(pbkrtest)
+library(emmeans)
+```
+
+---
+
+The following data are from a spring oats trial run in Craibstone, near Aberdeen in Scottland.
+
+24 varieties of oats were grown each grown in 3 fields (`rep`), and the yield (tonnes / ha) was assessed at the end of the season.
+Each field was divided into 6 blocks.
+
+```{r}
+oats = read.csv('Oats_trials.csv')
+str(oats)
+```
+
+Your goal over the following set of questions is to identify a set of genotypes to keep / recommend for use.
+
+## 1.1 Blocks are specific to each field
+How many unique blocks are there? 
+If necessary, re-name the blocks so that they are appropriately nested in the fields.
+
+```{r}
+```
+
+> ENTER YOUR RESPONSE HERE
+
+## 1.2 Characterize the experimental design
+
+Start by making a model table: 
+
+**Design**: Try to identify the design, but not required.
+
+| Structure | Variable | Type | # levels | Experiment Unit |
+|-----------|----------|------|----------|-----------------|
+| Treatment |          |      |          |                 |
+| Design    |          |      |          |                 |
+| Response  |          |      |          |                 |
+
+
+## 1.3 This is an incomplete block design. Fill in the following:
+
+| parameter           | value |
+|---------------------|-------|
+| # treatments (t)    |       |
+| # blocks (b)        |       |
+| # reps/trt (n_1 = r)|       |
+| # trts / block (k)  |       |
+
+Could this design be balanced? What is lambda (the average times each pair of treatments occur in the same block)?
+
+```{r}
+```
+
+> ENTER YOUR RESPONSE HERE
+
+## 1.4 Make an incidence matrix for the design. 
+Use the `table` function as in Lab_9. Is the design balanced? (Hint: use the `crossprod` function)
+```{r}
+```
+
+## 1.5 Is the design resolvable?
+Resolvable designs are designs in which a subset of the blocks constitutes a complete block of the treatments.
+Resolvable designs are nice because each larger block is a complete replicate of the experiment, so each super-block
+can be run separately.
+
+Identify blocks that can be resolved into a complete block. 
+**Hint**: Check the Reps!
+```{r}
+```
+
+> ENTER YOUR RESPONSE HERE
+
+## 1.6 Fit a linear model to the yield data. 
+Use an ANOVA to assess whether there is strong evidence for differences among the genotypes.
+
+**Note**: If you use fixed blocks, ensure that in your model and ANOVA table, blocks are included before `gen`.
+If you use `rep:block` to nest block in `rep`, then R will move the `rep:block` term to the end of the model.
+To avoid this, make a new term `unique_blocks` with a separate ID for block in each rep.
+Alternatively, declare blocks random (but be careful about nesting!).
+
+```{r}
+```
+
+> ENTER YOUR RESPONSE HERE
+
+## 1.7 Make a Compact Letter Display to compare the genotypes.
+Identify the best-preforming genotype, and any others that can't be statistically distinguished (alpha = 0.1) from the one that performed best.
+
+```{r}
+```
+
+> ENTER YOUR RESPONSE HERE
+
+## 1.8. In the above analysis, if you declare the blocks to be random, you should find that G02 is declared different from G09 but G04 is not. However the estimated value of G02 is closer to G09 than G04 is.
+Explain this observation. Why can we distinguish G02 and G09, but not G04 and G09 at alpha = 0.1?
+
+> ENTER YOUR RESPONSE HERE
+

@@ -1,0 +1,192 @@
+---
+title: "HW6"
+output: 
+ html_notebook:
+    toc: true
+    toc_float: true
+    number_sections: true
+---
+When you are done:
+
+1. Select 'Run All' from the 'Run' dropdown menue.
+2. Save (File -> Save)
+3. Click 'Preview' to bring up the `HW1.nb.html` file. Check through this to make sure it rendered correctly.
+4. Upload the `HW1.nb.html` to Canvas.
+
+> Grading Notes:
+>
+> For questions that require a text answer:
+> Full credit: requires an answer to each question asked. Your explanations need to valid
+and logical. You don't need to use the same words as the key, but the meaning needs to be complete.
+> Assign partial credit for answers that are incomplete. For multi-part questions, divide points
+approximatly equally unless otherwise specified.
+>
+> For all questions, if you get the right answer using a different approach than I use, that is fine.
+
+> Fill out the table below for each question (you can copy to another text file and fill it out there)
+Then copy the table and paste it into the comments section for the submitted assignment on Canvas.
+
+Grading table
+
+| Question | Max  | Score |
+|----------|------|-------|
+| 1.1      | 5    |       |
+| 1.2      | 5    |       |
+| 1.3      | 6    |       |
+| 1.4      | 6    |       |
+| 1.5      | 6    |       |
+| 1.6      | 6    |       |
+| 1.7      | 6    |       |
+| Total    | 40   |       |
+
+Necessary libraries
+```{r echo = F}
+# Necessary pacakges 
+library(ggplot2) 
+library(emmeans)
+# the following 4 packages are new. You may have to install these using install.packages(c('car','lme4','lmerTest','pbkrtest'))
+library(car)
+library(lme4)
+library(lmerTest)
+library(pbkrtest)
+```
+
+## Question 1
+
+A researcher was interested in examining the effect of pasture species composition on beta-carotene content in eggs of pastured poultry. 
+She evenly divided each of four fields into five sections and overseeded each section with one of the following: 
+1) annual rye (grass); 2) fescue (grass); 3) white clover (legume); 4) vetch (legume); or, 5) clover/fescue mix. 
+A separate flock of 10 birds was put out in each section. 
+After one-week, eggs from each flock were collected daily and combined for determining beta-carotene content of the yolks. 
+These values in $\mu g/g$ were averaged after 10 days and are presented below. 
+
+| Field | P1 - Rye | P2 - Fescue | P3 - Clover | P4 - Vetch | P5 - Mix |
+|:-----:|:--------:|:-----------:|:-----------:|:----------:|:--------:|
+|   F1  |   3.63   |     3.49    |     3.84    |    4.60    |   5.32   |
+|   F2  |   3.81   |     4.30    |     4.65    |    5.50    |   4.79   |
+|   F3  |   2.97   |     3.26    |     4.16    |    3.85    |   5.13   |
+|   F4  |   4.08   |     4.15    |     4.19    |    5.06    |   4.52   |
+
+```{r echo=FALSE}
+data_1 = read.csv('egg_carotene.csv')
+str(data_1)
+```
+
+### 1.1 Describe the design of this experiment in detail.
+
+**Design**: RCBD
+**Response**: concentration of beta-carotene (mu/g) in the pooled eggs collected from a field section with 10 birds over 10 days.
+
+Table # 1
+| Structure | Variable | Type        | # levels | Experimental Unit |
+|-----------|----------|-------------|----------|-------------------|
+| Treatment | Species  | Categorical | 5        | Section           |
+| Design    | Field    | Categorical | 4        |                   |
+|           | Section  | Categorical | 20       |                   |
+| Response  | Beta     | Numeric     | 20       |                   |
+
+
+>[5 points] [-2 points] For any incorrect # levels or wrong experimental units.
+
+
+### 1.2 Assess whether the assumptions of a linear model are adequately satisfied. Is a transformation needed?
+    
+```{r}
+lm1 = lm(Beta ~ Field+Species,data_1)
+par(mfrow=c(1,2))
+plot(lm1,which=2:3)
+```
+
+> Of these, the Scale-Location plot is the most suspicions, showing greater variance for larger means. This means that we should be somewhat cautious about confidence intervals around the biggest means. However, log-transforming the data only helps these assumptions a bit, and sqrt-transformed doesn't seem to help at all. We'll accept either un-transformed, or log-transformed data. 
+
+> In this case, how should you chose? The answer is really about clarity or presentation. Sometimes it makes more sense to talk about fold-changes, and sometimes about absolute changes. If the transformation doesn't make much difference in the diagnostics, chose whichever you'd prefer to discuss, or whichever makes more sense in terms of the mechanism by which the treatment operates. There shouldn't be any particular reason to favor transformed or un-transformed data otherwise.
+
+>[5 points total]
+>[2 point]: QQ-plot
+>[2 point]: Scale-location plot, fitted vs. residuals, etc.; something to show the variation between the groups.
+>[1 point]: Explanation; in your explanation you should talk about whether or not to transform, and your reason.
+
+### 1.3 Estimate the differences between all pairs of pasture covers. Include appropriate units based on your choice of transformation (or no transformation)
+
+```{r}
+trt_means = emmeans(lm1,specs = 'Species')
+trt_effects = contrast(trt_means,method = 'pairwise')
+summary(trt_effects,infer=T)
+```
+
+> These are un-transformed data. Therefore, the units of difference are in ug/g of beta carotene.
+
+> Had the log-transformation been used, the units of the estimate would be log-foldChange of ug/g beta carotene.
+
+>[6 points total]
+>[2 points]: showing a correct emmeans table, [-1 point] for not setting up the table correctly.
+>[1 point]: for correct units of difference.
+
+### 1.4 Is there any evidence of an interaction between Field and Species cover? ie. do differences among covers change across the fields?
+Is the interaction replicated? If not, you can't answer this question with an ANOVA, but you can tentatively assess with an interaction plot. 
+```{r}
+block_means = aggregate(Beta ~ Field,data_1,FUN=mean)
+# order the table of block_means
+block_means = block_means[order(block_means$Beta),]
+block_means
+data_1$Field = factor(data_1$Field,levels = block_means$Field)
+ggplot(data_1,aes(x=Field,y=Beta)) + geom_point(aes(color=Species)) + geom_line(aes(color=Species,group=Species))
+```
+
+> Interaction plots for RCBDs are often pretty messy looking. That's because we haven't replicated any of the interactions. However, the main thing we're looking for is a trend in the differences between big vs small blocks (Fields). Do differences get bigger as Field means get bigger? In this case, we see a moderate amount of evidence for that = the differences among Species seem to be biggest for the field with the biggest mean.
+
+>[6 points total]
+>[3 points]: for showing the differences in species' beta-carotene content in the different Fields.
+>[3 point]: for explanation and giving a reason whether or not there is an interaction.
+
+
+### 1.5 Did the researcher gain information by utilizing a RCBD relative to a CRD where the sections of all fields were randomized together?
+```{r}
+anova(lm(Beta~Field+Species,data_1))
+anova(lm(Beta~Species,data_1))
+(F_crit_RCBD = qf(1-0.05,4,12))
+(F_crit_CRD  = qf(1-0.05,4,15))
+F_crit_CRD/F_crit_RCBD
+```
+
+> To evaluate the utility of a Blocking factor, we want to assess how both the MSE and the critical values (t or F depending on whether you're talking about confidence intervals or ANOVA) are affected by blocking. For the test on Pastures, we can check how the F_crit will change (ex with alpha = 0.05) by calculating it based on the degrees of freedom for both designs (the Df_residual for the RCBD will be (b-1) smaller for b blocks). We can then estimate the change in MSE by simply dropping Field and re-fitting the model. This is not exactly correct (see the Readings T6_RCBD.pdf for the correct deviation), but it is a good approximation. In this case, our MSE increased by a factor of 1.46, while the F_crit decreased by a factor of 0.94, so in total, the CRD has lower power
+
+> A more straigtforward way to reach approximately the same conclusions would be to look at the change in p-value (ANOVA) or confidence intervals with and without the blocking term. If the p-value is lower with the Blocks, then they were probably useful. However, even if they were higher in the RCBD, you should still report the RCBD p-values since your experimental design was a RCBD. But in your following experiments, a CRD would probably be more efficient
+
+>[6 points] You need to give a reason for why you think a RCBD or CRD works better. For instance, you can say that CRD potentially works better because Fields is not relatively important (showing that the p-value for Fields is not significant at alpha = 0.05). A more complete answer would follow what's written above, where you calculate the F_crit values for both the RCBD and CRD. 
+
+### 1.6 Instead of randomizing all 5 plots on the 4 fields together, speculate on the efficiency had she used only one field.
+In this case, to maintain the same replication, she would divide it into 20 smaller plots, and use only 2 birds per plot (instead of 10).
+Speculate on how the MSE would compare to the original RCBD, or the CRD over the four fields. 
+**Is there any advantage to spreading the experiment over 4 fields** Is there any disadvantage?
+
+> With the 1-field CRD, the MSE would probably go up because each observational unit contained only 2 birds, and so would be move variable. 
+With the 4-field CRD, the MSE may go up slightly because the fields did appear to differ some in quality, and this variation would go into the CRD's MSE. However, if the variation we observe here among the Fields was actualy just experimental error (a p-value of 0.09 is pretty weak evidence for field differences), then our MSE may not go up in the 4-field CRD, given the increased Df_Residuals.
+
+> The advantages to spreading the experiment over 4 fields are i) to account for field variation if it exists, and to extrapolate results to more fields (as we'll discuss later). However, if fields do not vary (or vary very little), then increasing the number of fields reduces Df error (given the same number of replicates), and introduces the possibility of treatment-block interactions which make conclusions more difficult to report. If your experimental goals do not require generalizing across fields, then given the same size experiment, it's always better to not use blocks if you can ensure homogenous experimental units in other ways.
+
+>[6 points total]
+>[4 points]: Need to say that because there is more variation because we only use 2 birds per plot, and there is potentially less variation because we are just using 1 field. Another acceptable answer to the effect of including more fields is that there can be more variation depending if fields are more homogenous or heterogeneous.
+>[2 point]: Need to discuss the MSEs of each model and give reasons why MSE would change between a 1-field experiment vs. 4-field experiment (as shown above).
+
+### 1.7 Add 1 $\mu g/g$ to each value in Field F4. Does this produce any effect on the SS_Pasture, MS_Pasture, or F-value? Explain why or why not in one sentence.
+In this case (with Field F4 being much more productive), did the importance of Blocking increase or decrease?
+
+The following code makes a modifed dataset with the increase of 1 in the Beta values for Field F4
+
+```{r}
+data_2_modified = data_1
+data_2_modified$Beta[data_2_modified$Field == 'F4'] = data_2_modified$Beta[data_2_modified$Field == 'F4'] + 1
+# compare analyses on old and new data
+anova(lm(Beta~Field + Species,data_1))
+anova(lm(Beta~Field + Species,data_2_modified))
+
+# new data without blocks
+anova(lm(Beta~Species,data_2_modified))
+```
+
+> The importance of blocking now increased. The MS_Block increased (because the fields are now more variable). The SS and MS pasture did not change, nor did the F-value because the experimental error (MSE) didn't change. However, if we now ignored the Fields and analyzed as a CRD, our MSE would go up more than in the original data (due to larger SS_BLock), meaning that the effect of Block on the Species F-value becomes more important.
+
+>[6 points total]
+>[4 points]: Showing the correct ANOVA table.
+>[2 point]: For talking about how blocking is now significant in your explanation.

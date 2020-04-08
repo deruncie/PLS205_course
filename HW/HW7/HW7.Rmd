@@ -1,0 +1,285 @@
+---
+title: "HW 8"
+output: 
+ html_notebook:
+    toc: true
+    toc_float: true
+    number_sections: true
+---
+
+```{r echo=FALSE,message=FALSE,warning=FALSE}
+library(lme4)
+library(lmerTest)
+library(pbkrtest)
+library(emmeans)
+library(ggplot2)
+library(car)
+library(multcomp)
+```
+
+---
+
+| Company | | |———|—–| 
+| D | a | 
+| F | a |
+| A | ab | 
+| C | bc | 
+| E | bc | 
+| B | c | 
+
+This homework follows from Lab 8. You'll analyze the Split-Plot Oats dataset in several different ways and compare results.
+
+The experiment is modified slightly. Now rather than 4 blocks in one field, the experiment
+was done over 4 fields, with each Fertilizer treatment applied once to a single section of each field.
+
+In this study, four different fertilizers were randomized within four MainPlots in each of four fields. 
+Four different varieties of oats were randomized within four subplots separately in each of the sixteen main plots. 
+The experiment was run as a split-plot because the fertilizers could only be applied to large sections of the field,
+while the oat varieties could be randomized to smaller plots within each section.
+
+For the following analyses, we'll assume the the Blocks are actually four separate fields.
+
+- Fields: Four
+- Main plots (Fertilizer): Four
+- Subplots (Variety): Four (includes one control, V1)
+
+![](Oats_layout.png)
+
+```{r}
+oats_data = read.csv('Oats_Field.csv')
+str(oats_data)
+```
+
+The following code fits the model demonstrated in lab:
+
+```{r}
+fixed_block_model = lmer(Yield ~ Fertilizer + Field + (1|MainPlot) + Variety + Fertilizer:Variety + Variety:Field,oats_data)
+```
+
+## Question 1. Split Plot RCBD with Random blocks
+
+### 1.1 Describe the experiment in detail
+Modify the experimental table from Lab 8 for the case where the four Fields are considered random.
+
+**Design**: Split-plot with RCBD on main plots
+
+| Structure | Variable                      | Type        | # levels | Experimental Unit          |
+|-----------|-------------------------------|-------------|----------|----------------------------|
+| Treatment |                               |             |          |                            |
+|           |                               |             |          |                            |
+|           |                               |             |          |                            |
+| Design    |                               |             |          |                            |
+|           |                               |             |          |                            |
+|           |                               |             |          |                            |
+|           |                               |             |          |                            |
+|           |                               |             |          |                            |
+|           |                               |             |          |                            |
+|           |                               |             |          |                            |
+|           |                               |             |          |                            |
+| Response  |                               |             |          |                            |
+
+
+### 1.2 Describe how your conclusions from this analysis will differ from those from lab.
+Don't analyze the data yet. Just describe how statements about effects you observe will change in this case.
+
+> ENTER YOUR RESPONSE HERE
+
+### 1.3 Fit an appropriate linear model to the data
+Modify the following code from lab according to account for the random blocks
+```{r}
+# use the following name for your model by removing the '#' and filling in the rest
+#random_block_model = 
+```
+
+### 1.4 Make ANOVA tables for the `fixed_block_model` and `random_block_model`
+List differences between the results. Ignore rows involving `Block`, and focus on `Mean Sq`, `NumDF`, `DenDF`, `F.value`, and `Pr(>F)`
+Which results are the same? Which are different?
+
+Fixed Blocks ANOVA:
+```{r}
+# from lab:
+anova(fixed_block_model,ddf='K')
+```
+
+Random Blocks ANOVA:
+```{r}
+```
+
+> ENTER YOUR RESPONSE HERE
+
+### 1.5 In lab, we observed that different comparisons of specific combinations of Fertilizer and Genotype were estimated with different SEs (last part of section "Means comparisons").
+Using the same code, inspect the SEs of all pairwise comparisons of combinations of Fertilizer and Genotype for the model with **random blocks**.
+There are now three different "classes" of comparisons, each with a different SE. What are these three classes?
+```{r}
+```
+
+
+> ENTER YOUR RESPONSE HERE
+---
+
+**To explore these differences, we will split the analysis into an analysis of the Fertilizers, and a separate analysis of Varieties**
+
+## Question 2
+
+If we ignore Variety, we can analyze Fertilizer by itself by averaging up to its experimental units.
+To do this, we can average the four SubPlots per MainPlot into a single value, resulting in a new smaller dataset.
+
+The following code does this averaging and produces a new data-frame with one observation per MainPlot:
+```{r}
+mainPlot_data = aggregate(Yield~MainPlot+Fertilizer+Field,oats_data,mean)
+str(mainPlot_data)
+```
+
+### 2.1 Describe this subset of the experiment in detail, assuming Fields are fixed
+This would be our analysis if we were only interested in *these four fields*.
+Describe as if this were the only data available
+
+**Design**: 
+
+| Structure | Variable          | Type        | # levels | Experimental Unit |
+|-----------|-------------------|-------------|----------|-------------------|
+|           |                   |             |          |                   |
+|           |                   |             |          |                   |
+|           |                   |             |          |                   |
+|           |                   |             |          |                   |
+|           |                   |             |          |                   |
+
+
+### 2.2 Fit a linear model to the `mainPlot_data`, and present an ANOVA table
+```{r}
+# mainPlot_fixed = 
+```
+
+
+### 2.3 Repeate assuming Blocks are random
+This would be our analysis if our fields were a random sample of set of possible fields,
+and we wished to make general recommandations for all fields.
+
+**Design**: 
+
+| Structure | Variable          | Type        | # levels | Experimental Unit |
+|-----------|-------------------|-------------|----------|-------------------|
+|           |                   |             |          |                   |
+|           |                   |             |          |                   |
+|           |                   |             |          |                   |
+|           |                   |             |          |                   |
+|           |                   |             |          |                   |
+
+
+### 2.4 Fit a linear model to the `mainPlot_data`, and present an ANOVA table
+```{r}
+# mainPlot_random = 
+```
+
+
+### 2.5 Compare the conclusions from these two models about the effects of Fertilizer to the conclusions from the full Split-plot models.
+Did treating Block as random affect the conclusions?
+
+> ENTER YOUR RESPONSE HERE
+
+----
+
+## Question 3
+
+You'll now study the original data for Variety, ignoring Fertilizer.
+
+This design is one we haven't seen before directly. 
+
+We have two hierarchical levels of blocking: 4 Fields, each with 4 MainPlots.
+
+This is called a **Replicated RCBD**. There are effectively 4 replicates of a RCBD, each with 4 different blocks.
+The MainPlots are our normal Blocks, and the Fields are now our replications of this experiment.
+We say that MainPlots are **nested** in experiment replicates.
+
+### 3.1 Describe this experiment in detail, assuming Fields are fixed
+**Note**: We should assume MainPlot is Random. It has to be random given that the whole experiment is a split plot.
+
+**Design**: Replicated RCBD with fixed Reps (Fields) and random blocks (MainPlots)
+
+| Structure | Variable          | Type        | # levels | Experimental Unit            |
+|-----------|-------------------|-------------|----------|------------------------------|
+| Treatment |                   |             |          |                              |
+| Design    |                   |             |          |                              |
+|           |                   |             |          |                              |
+|           |                   |             |          |                              |
+|           |                   |             |          |                              |
+|           |                   |             |          |                              |
+| Response  |                   |             |          |                              |
+
+
+### 3.2 Repeat this table, assuming Fields are random
+
+**Design**: Replicated RCBD with Random Reps (Fields) and random blocks (MainPlots)
+
+| Structure | Variable          | Type        | # levels | Experimental Unit            |
+|-----------|-------------------|-------------|----------|------------------------------|
+| Treatment |                   |             |          |                              |
+| Design    |                   |             |          |                              |
+|           |                   |             |          |                              |
+|           |                   |             |          |                              |
+|           |                   |             |          |                              |
+|           |                   |             |          |                              |
+| Response  |                   |             |          |                              |
+
+
+### 3.3 Fit a linear model to the `oats_data` based on the above table (ignoring Fertilizer, and with Blocks as random).
+I've provided the model with fixed blocks.
+Which model provides stronger evidence for differences among varieties?
+
+Fixed blocks:
+```{r}
+subPlot_model_fixed = lmer(Yield ~ Field + (1|MainPlot) + Variety + Variety:Field,oats_data)
+anova(subPlot_model_fixed,ddf='K')
+```
+
+Random blocks:
+```{r}
+#subPlot_model_random = 
+```
+
+> ENTER YOUR RESPONSE HERE
+
+### 3.4 Using both models, form 95% confidence intervals around the estimated difference between Variety_1 and Variety_2
+Are the estimates different? The confidence intervals? 
+In one sentence each, describe how to interpret each confidence interval
+
+Fixed blocks (Fields) model:
+```{r}
+fixed_means = emmeans(subPlot_model_fixed,specs = 'Variety',lmer.df = 'K',at = list(Variety = c('V1','V2')))
+summary(contrast(fixed_means,method = 'pairwise'),infer = c(T,F))
+```
+
+Random blocks (fields) model:
+```{r}
+```
+
+> ENTER YOUR RESPONSE HERE
+
+### 3.5 Compare the ANOVA test on Variety from these models to the Variety test from the SplitPlot models of Question 1.
+Which are the same? Which are different?
+*Note*: I've provided the code. If you used the model names I suggested above, this should work directly.
+
+Models only with Variety:
+
+Field Fixed:
+```{r}
+anova(subPlot_model_fixed)
+```
+Field Random:
+```{r}
+anova(subPlot_model_random,ddf='K')
+```
+
+Models with full data
+
+Field Fixed:
+```{r}
+anova(fixed_block_model)
+```
+
+Field Random:
+```{r}
+anova(random_block_model,ddf='K')
+```
+
+> ENTER YOUR RESPONSE HERE

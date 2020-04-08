@@ -1,0 +1,249 @@
+---
+title: "HW3"
+output:
+  pdf_document:
+    toc: yes
+  html_notebook:
+    number_sections: yes
+    toc: yes
+    toc_float: yes
+---
+> Grading Notes:
+>
+> For questions that require a text answer:
+> Full credit: requires an answer to each question asked. Your explanations need to valid
+and logical. You don't need to use the same words as the key, but the meaning needs to be complete.
+> Assign partial credit for answers that are incomplete. For multi-part questions, divide points
+approximatly equally unless otherwise specified.
+>
+> For all questions, if you get the right answer using a different approach than I use, that is fine.
+
+> Fill out the table below for each question (you can copy to another text file and fill it out there)
+Then copy the table and paste it into the comments section for the submitted assignment on Canvas.
+
+Grading table
+
+| Question | Max  | Score |
+|----------|------|-------|
+| 1.1      | 3    |       |
+| 1.2      | 3    |       |
+| 1.3      | 4    |       |
+| 1.4      | 4    |       |
+| 1.5      | 4    |       |
+| 2.1      | 3    |       |
+| 2.2      | 3    |       |
+| 2.3      | 4    |       |
+| 2.4      | 4    |       |
+| 2.5      | 4    |       |
+| 2.6      | 4    |       |
+| Total    | 40   |       |
+
+```{r}
+library(emmeans)
+library(ggplot2)
+```
+
+
+# Question 1
+
+In lab, we analyzed an experiment with subsamples. Multiple soil samples were taken per plot.
+It turns out that in a balanced experiment where evey experimental unit has the same number of subsamples,
+you will get *exactly* the same answers if you first average the subsamples into a single mean response per plot,
+and then analyze the averaged data.
+
+In this question, I want you to repeat the analyses presented in Lab3 after first averaging the subsamples per plot.
+
+The following code loads the Sample-level data from lab and averages the Samples per Plot:
+
+```{r}
+clover <- read.csv('Clover_data.csv')
+clover_means <- aggregate(NLevel ~ Plot + Strain,clover,FUN = mean)
+str(clover_means)
+```
+
+## Explain why the soil samples are subsamples, not experimental units
+
+> The soil samples are subsamples because the treatments were applied randomly to the plots, so the four soil samples from that plot all received the same application of a treatment
+>
+> [3 points] Must mention the randomization and the experimental unit
+
+## Provide a new design table for the averaged data
+
+**Design**: Completely randomized design
+
+| Structure | Variable | Type | # levels | Experimental Unit |
+|-----------|----------|------|----------|-------------------|
+| Treatment | Strain   | Cat  | 6        | Plot              |
+| Design    | Plot     | Cat  | 30       |                   |
+| Response  | NLevel   | Num  | 30       |                   |
+
+> [3 points] The key is the Plot and the # levels. 
+> Having the Variable names right and corresponding the data, and the Type right makes it easier to see problems in the data entry, but are not necessary.
+
+## Write the model for the averaged data and fit it with the appropriate model function
+```{r}
+clover_model <- lm(NLevel ~ Strain, clover_means)
+```
+
+> [4 points] Must use lm (2 points) and have the correct model (2 points). -3 for the same model as lab
+
+## Show appropriate diagnostic plots and assess whether the data satisfy the model assumptions
+Compare the plots to those generated in lab.
+Note: To replicate the `qqplot` and `Scale-Location` plot shown in Lab, you can use `plot(model,which=2:3)`
+```{r}
+par(mfrow=c(1,2))
+plot(clover_model,which=2:3)
+```
+These plots are nearly identical to those from lab. I can't find any meaningful differences except the scale of the axes. Axis scales in these figures are not important.
+As we described in lab, there is some indication of problems here. In particular, there are too many small values in the data. 
+These might be influential outliers that affect the reliability of estimates of sigma^2. 
+Also, the red line in the Scale-Location plot gives some indication Strains with higher NLevel rates also are more variable, although the evidence for this is weak,
+and the strain with mean ~20 seems to have smaller residuals than the others. 
+This is enough to be cautious, but probably not to invalidate the analysis.
+
+> [4 points] Your discussion should be reasonable. I would accept answers saying this is OK, or bad enough to throw out. 
+> But if you say it's OK, you should still comment on the excess of negative residuals
+> 2 points for discussion, 2 points for comparison to lab.
+
+## Provide 95% confidence intervals for the effect of each of the 5 new strains relative to the control strain
+Compare your results to the results from the full data in lab.
+```{r}
+means_clover = emmeans(clover_model,spec = 'Strain')
+effects = contrast(means_clover,'trt.vs.ctrl',ref=6)
+summary(effects,level = 0.95,infer = c(T,F))
+```
+
+> The results are exactly equal to those presented in lab
+> [4 points] 3 points for the correct code and answers, 1 for comparison to lab
+
+
+
+---
+
+# Question 2
+A Pharmacy is testing 5 new cough syrups. Two are derived from a steroid compoind, and two from dexamethasone. 
+The researchers include the current standard drug as a control, and label the syrups A-E so that the administering doctors do not
+know the identity of the drug (a double-blind study). Each drug was administered to 5 different people. 
+Below is the average coughs/hour of the replications:
+
+| Drug            |       |       |       |       |       |
+|-----------------|-------|-------|-------|-------|-------|
+| A_Steroid       | 17.13 | 31.26 | 24.74 | 29.08 | 36.69 |
+| B_Steroid       | 20.82 | 45.82 | 29.52 | 27.35 | 24.08 |
+| C_Dexamethasone | 29.08 | 53    | 48.69 | 42.13 | 36.63 |
+| D_Dexamethasone | 31.26 | 30.17 | 41.04 | 17.13 | 11.69 |
+| E_Old_standard  | 55.17 | 49.74 | 48.62 | 37.78 | 35.61 |
+
+```{r}
+cough_data = read.csv('Coughing.csv')
+str(cough_data)
+```
+
+## Describe the design of this experiment in detail.
+
+**Design**: Completely randomized design
+
+| Structure | Variable | Type        | # levels | Experimental Unit |
+|-----------|----------|-------------|----------|-------------------|
+| Treatment | Drug     | Categorical | 5        | Person            |
+| Design    | Person   | Categorical | 25       |                   |
+| Response  | Coughs   | Numeric     | 25       |                   |
+
+> Key things are the experimental unit and the # of levels. It is OK if the names are different
+as long as it is clear what each name refers to.
+
+> [3 points]
+
+## Visualize the data using a boxplot
+Does it appear visually that there are differences among drugs? Do you see any data quality issues?
+```{r}
+ggplot(cough_data,aes(x=Drug,y=Coughs)) + geom_boxplot()
+```
+
+> It appears that 3/4 new drugs reduce coughs. There may be an outlier point in the B_steroid group,
+but we should wait for more sensitive diagnostics to tell for sure.
+
+> [3 points]
+
+## Assess whether the assumptions of normality and equality of variances are satisfied by this data.
+```{r}
+lm1 = lm(Coughs ~ Drug,cough_data)
+par(mfrow=c(1,2))
+plot(lm1,which=c(2,3))
+```
+
+> Yes, the residuals are consistent with a normal distribution, and variances appear approximately equal in each group
+> You need to show both the QQ-plot and a plot that shows the variances between groups (scale-location, boxplot, residuals vs. fitted values, etc.)
+> [4 points]: 2 points for QQ-plot and 2 points for a plot that shows variances between groups.
+
+## Estimate the effect of each of the drugs relative to the old standard 
+How strong is the evidence that any of the new drugs improve on the old standard?
+Provide appropriate 95% confidence intervals for each estimate
+Use `ref = X` in the call to emmeans to control which treatment level is treated as the control.
+```{r}
+library(emmeans)
+drug_means = emmeans(lm1,spec = 'Drug')
+drug_effects = contrast(drug_means,'trt.vs.ctrl',ref=5)
+summary(drug_effects,level = 0.95,infer = c(T,F))
+```
+
+> There is fairly strong evidence that drugs A and D improve on the old standard. The 95% confidence intervals
+do not cross zero, and the p-values are fairly small. You could also say there is fairly strong evidence that B also improves because its 
+p-value is also pretty small.
+
+> [4 points]: We are looking specifically for comparisons between drugs A-D and E (the old standard). 
+> 2 points for the pairwise comparisons, and 2 points for discussing how A and D show strong evidence for being better than drug E.
+
+
+## The company wants to move forward with a single drug - can you recommend one of the drugs over all the others?
+This asks you to declare one drug to perform better than all others. 
+- If you choose to recommend a drug, be very specific about what criteria you used, and declare your confidence in this conclusion.
+- If you choose not to recommend any specific drug, declare why you are not able to declare the best-performing drug the winner?
+```{r}
+cld(drug_means,Letters = letters)
+```
+
+> There is no drug that we can confidently declare to be better than all others. The lower CL of the best-performing
+drug (D) overlaps with the estimates of all other new drugs. All new drugs share the same letter (a) in the Tukey test.
+
+> [4 points]: You need to show some sort of comparison between the drugs, not just between drugs A-D and the old standard.
+> You can show pairwise comparisons between drugs, or how the drugs all belong in the same group to say how there aren't significant differences between drugs. We need some kind of statistical comparison between the drugs. [-2 points otherwise]
+> 2 points for the statistics (pairwise comparisons and/or showing drugs all belong in the same group using emmeans) and 2 points for the explanation.
+> Plots + explanation only are not adequate: you need to show the statistics. [- 2 points]
+
+## Now, the company decides they do want to release a new Steroid drug, and a new Dexamethasone drug. 
+The following code splits the data into two separate datasets for each class of drug.
+Directly compare the two steroid drugs, and separately compare the two Dexamethasone drugs. 
+**Can you recommend either steroid drug? Either Dexamthasone drug?**
+Use alpha = 0.05
+```{r}
+steroid_data <- subset(cough_data,Type == 'Steroid')
+Dexamethasone_data <- subset(cough_data,Type == 'Dexamethasone')
+
+lm_steroid <- lm(Coughs~Drug,steroid_data)
+steroid_means = emmeans(lm_steroid,spec = 'Drug')
+summary(contrast(steroid_means,'pairwise'),infer=T)
+
+lm_Dex <- lm(Coughs~Drug,Dexamethasone_data)
+dex_means = emmeans(lm_Dex,spec = 'Drug')
+summary(contrast(dex_means,'pairwise'),infer=T)
+```
+Your analysis should differ qualitatively from your analysis above (two drugs that were not distinguishable above are distinguishable here)
+
+- Why would this analysis differ from the previous analysis? Differences may include the set of questions, the calculation of SE, and the calculation of p-values / Confidence intervals
+- Are the above p-values reasonable to report as evidence for a difference between either of the two pairs of drugs?
+
+> This differs because: 
+1) By splitting up the analysis, R doesn't pool all drugs to estimate SE
+2) The analysis asks two questions instead or 4 (vs control) or 10 (pairwise).
+3) No adjustment is made for multiple (2) comparisons. Since these two tests are neither trt.vs.control or pairwise,
+the best would be to do a Bonferroni (2) adjustment by multiplying each p-value by 2. 
+
+> [4 points]: To get full credit you need to mention all of the above: differences in SE, and asking multiple questions/lack of control for multiple comparisons.
+> 2 points for the statistical analyses (1 comparison between the steroid data and 1 comparison between the dexamethasone data)
+> 2 points for the explanation. If you are missing any of the parts above (SE is different, asking multiple questions/lack of control for multiple comparisons) then -1 point
+for the explanation part.
+> -3 point if you do not show any statistical analyses and just show plots.
+
+
+

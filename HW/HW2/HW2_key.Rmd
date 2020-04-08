@@ -1,0 +1,238 @@
+---
+title: "HW2"
+output: 
+ html_notebook:
+    toc: true
+    toc_float: true
+    number_sections: true
+---
+
+> Grading Notes:
+>
+> For questions that require a text answer:
+> Full credit: requires an answer to each question asked. Your explanations need to valid
+and logical. You don't need to use the same words as the key, but the meaning needs to be complete.
+> Assign partial credit for answers that are incomplete. For multi-part questions, divide points
+approximatly equally unless otherwise specified.
+>
+> For all questions, if you get the right answer using a different approach than I use, that is fine.
+
+> Fill out the table below for each question (you can copy to another text file and fill it out there)
+Then copy the table and paste it into the comments section for the submitted assignment on Canvas.
+
+Grading table
+
+| Question | Max  | Score |
+|----------|------|-------|
+| 1.1      | 4    |       |
+| 1.2      | 4    |       |
+| 1.3      | 4    |       |
+| 1.4      | 4    |       |
+| 1.5      | 4    |       |
+| 1.6      | 4    |       |
+| 1.7      | 4    |       |
+| 1.8      | 4    |       |
+| 1.9      | 4    |       |
+| 1.10     | 4    |       |
+| Total    | 40   |       |
+
+---
+
+# Question 1 [9 points each]
+A researcher is interested in the difference in root growth between two wheat varieties. She plants
+16 seeds of each variety in a randomized design and harvests the roots after 1 week. She records
+the root length (cm) of each plant.
+
+```{r echo = FALSE}
+# This loads the data for this question
+data_1 <- read.csv('wheat_roots.csv')
+# This prints a summary of the data table
+str(data_1)
+```
+
+## Describe the design of this experiment in detail. 
+
+Use the following table. When you click `Preview`, RStudio will format this table into a nice HTML table.
+You can also fill out the table in an excel document, and then paste it into [this website](http://www.tablesgenerator.com/markdown_tables) to generate the Markdown table. 
+
+**Design**: Completely randomized design
+
+| Structure | Variable    | Type        | # levels | Experimental Unit |
+|-----------|-------------|-------------|----------|-------------------|
+| Treatment |  Variety    | Categorical |  2       |  Plant            |
+| Design    |  Plant      | Categorical |  32      |                   |
+| Response  | Root_length | Numeric     |  32      |                   |
+
+> Key things are the experimental unit and the # of levels. It is OK if the names are different
+as long as it is clear what each name refers to.
+
+> [4 points]
+
+
+## To help you analyze this data, I've separated out the data from each variety into a vector:
+```{r}
+Variety_A <- data_1$Root_length[data_1$Variety == 'A']
+Variety_B <- data_1$Root_length[data_1$Variety == 'B']
+```
+
+> Give yourself 4 points for this part (free).
+
+Use these variables below for your calculations.
+
+## Estimate the difference in root lengths between the two varieties
+You can check your answers below with the `t.test` function, but you must write out the calculations by hand. You can use functions like `mean()` and `sd()`, `pnorm`, `qt`, etc.
+
+```{r}
+mean_A <- mean(Variety_A)
+mean_B <- mean(Variety_B)
+difference <- mean_A - mean_B
+difference
+```
+
+> We estimate the difference as 3.5cm
+
+> [4 points]
+
+## Estimate the standard error of this difference. Assume the variances of the two varieties are the same, and find a pooled estimate of the variance.
+```{r}
+var_A = var(Variety_A)
+var_B = var(Variety_B)
+pooled_var <- (var_A + var_B)/2
+SED <- sqrt(pooled_var/(16/2))
+SED
+```
+
+> We estimate the SED as 0.81 cm
+
+
+> [4 points]
+> Minus 2 for averaging standard deviations instead of variances
+> Minus 2 for any other issue in calculation
+
+## Form a 90% confidence interval for this difference
+```{r}
+tc = qt(0.1/2,df = 2*(16-1),lower.tail=F)
+c(difference -tc * SED, difference + tc*SED)
+```
+
+> The 90% confidence interval goes from 2.08 to 4.86cm
+
+> [4 points]
+> 1 point off for the wrong degrees of freedom (i.e. df = 15 instead of df = 30)
+
+## Is it likely to have observed this large a difference by chance if there were actually no difference?
+```{r}
+2*pt(difference/SED,df = 2*(16-1),lower.tail=F)
+```
+
+> The p-value is ~0.0002, so this large a difference is very unlikely had there really been no difference.
+
+> [4 points]
+> 2 points for p-value, and 2 points for a statement interpreting it.
+> 1 point off if if p-value was calculated incorrectly. 
+
+## Repeat the analysis using the `lm` and `emmeans` functions. Do you get the same answer?
+```{r}
+library(emmeans)
+model_1 <- lm(Root_length~Variety,data = data_1)
+differences_model1 <- emmeans(model_1,pairwise~Variety)
+summary(differences_model1,level = 0.9,infer=T)
+```
+
+> Yes, the answer is the same (although emmeans rounds the p-value)
+
+> [4 points]
+> For the emmeans model you need to calculate a confidence interval for the contrast using pairwise~Variety.
+> If you only have ~Variety, then take a point off because that does not show the confidence interval for the contrast.
+
+## Make the model diagnostic plots shown in lab. Is there reason to be concerned about any of the model assumptions?
+```{r}
+par(mfrow=c(1,2))
+plot(model_1,which = c(2,5))
+```
+
+> The data appear normally distributed. There may be slighly higher variance for Variety B than Variety A. 
+This may impact the accurary of the confidence intervals / p-values because we assume the variances are the same.
+
+> [4 points]
+> You need to show both the boxplot (or another plot showing within-group variation) and a QQ-plot to receive full credit. 
+> 1 point off if you are missing either one. For future questions asking for model diagnostic plots please show both.
+> Alternative interpretations are OK, as long as you give an explanation that is valid. It is a judgement call with these 
+diagnostics.
+
+## Calculate the power of the test to detect a difference of 3cm, with n=16 and alpha = 0.1. Assume the within-variety standard deviation is is 2.5cm
+```{r}
+# see: ?power.t.test
+power.t.test(n=16,delta = 3,sig.level = 0.1,sd = 2.5,alternative = 'two.sided')
+```
+
+> The power in this case would be 95%
+
+> [4 points]
+> For students that used sig.level = 0.9 because of the previous error in the homework and missed instruction, you can give yourself full credit.
+
+## Prepare a table showing the number of replicates required to detect significant differences (alpha = 0.01, power = 0.9) between means that are 1, 2, 4, 8, or 16 cm apart, assuming that the population standard deviation is 4cm. Use the function `power.t.test`. How much easier is it to detect a difference of 16cm than one of 1 cm?
+```{r}
+pop_sd = NA
+delta = c(1,2,4,8,16)
+reps = c(NA,NA,NA,NA,NA)
+
+# Here's a hit at how to calculate the sample size for the first delta
+# reps[1] <- power.t.test(n = ?,  # make sure to fill in ALL of the ?
+#                         delta = delta[1],
+#                         sd = 5,
+#                         sig.level = ?,
+#                         power = ?,
+#                         type = ?,
+#                         alternative = ?
+#                           )$n
+
+reps[1] <- power.t.test(n = NULL,  # make sure to fill in ALL of the ?
+                        delta = delta[1],
+                        sd = 4,
+                        sig.level = 0.01,
+                        power = 0.9,
+                        type = 'two.sample',
+                        alternative = 'two.sided'
+                          )$n
+reps[2] <- power.t.test(n = NULL,  # make sure to fill in ALL of the ?
+                        delta = delta[2],
+                        sd = 4,
+                        sig.level = 0.01,
+                        power = 0.9,
+                        type = 'two.sample',
+                        alternative = 'two.sided'
+                          )$n
+reps[3] <- power.t.test(n = NULL,  # make sure to fill in ALL of the ?
+                        delta = delta[3],
+                        sd = 4,
+                        sig.level = 0.01,
+                        power = 0.9,
+                        type = 'two.sample',
+                        alternative = 'two.sided'
+                          )$n
+reps[4] <- power.t.test(n = NULL,  # make sure to fill in ALL of the ?
+                        delta = delta[4],
+                        sd = 4,
+                        sig.level = 0.01,
+                        power = 0.9,
+                        type = 'two.sample',
+                        alternative = 'two.sided'
+                          )$n
+reps[5] <- power.t.test(n = NULL,  # make sure to fill in ALL of the ?
+                        delta = delta[5],
+                        sd = 4,
+                        sig.level = 0.01,
+                        power = 0.9,
+                        type = 'two.sample',
+                        alternative = 'two.sided'
+                          )$n
+
+# Here we make a table of the results. Note that we standardize the deltas by the population SD
+ans_4.4 <- data.frame(delta,reps)
+ans_4.4
+```
+> It requires approximately 160x as many samples in this setting to detect a difference of 1 than 16 with 90% power and alpha = 0.01.
+
+> [4 points]
+> 3 points for the table, 1 point for a statement about how much more difficult it would be. It doesn't have to be a quantitative statment.

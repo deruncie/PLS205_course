@@ -1,0 +1,131 @@
+---
+title: "HW2"
+output:
+  html_notebook:
+    number_sections: yes
+    toc: yes
+    toc_float: yes
+  html_document:
+    df_print: paged
+    toc: yes
+---
+
+Use this R Notebook document to answer the questions and document your work. 
+Enter the R code used to answer each question in the corresponding R code chunk. 
+Write any textual explanations **outside** of the chunks. When we grade, we will *hide* the code and just look at the R output and your written answers.
+Attempt to clean up your code as much as possible so that only the necessary lines remain. 
+
+When you are done:
+
+1. Select 'Run All' from the 'Run' dropdown menue.
+2. Save (File -> Save)
+3. Click 'Preview' to bring up the `HW2.nb.html` file. Check through this to make sure it rendered correctly.
+4. Upload the files: `HW2.nb.html` and `HW2.Rmd` to Canvas.
+
+---
+
+# Experiment
+A researcher is interested in the difference in root growth between two wheat varieties. She plants
+16 seeds of each variety in a randomized design and harvests the roots after 1 week. She records
+the root length (cm) of each plant.
+
+```{r echo = FALSE}
+# This loads the data for this question
+data_1 <- read.csv('wheat_roots.csv')
+# This prints a summary of the data table
+str(data_1)
+```
+
+## Describe the design of this experiment in detail. 
+
+Use the following table. When you click `Preview`, RStudio will format this table into a nice HTML table.
+You can also fill out the table in an excel document, and then paste it into [this website](http://www.tablesgenerator.com/markdown_tables) to generate the Markdown table. 
+
+**Design**: Completely randomized design
+
+| Structure | Variable    | Type        | # levels | Experimental Unit |
+|-----------|-------------|-------------|----------|-------------------|
+| Treatment |             |             |          |                   |
+| Design    |             |             |          |                   |
+| Response  |             |             |          |                   |
+
+
+## To help you analyze this data, I've separated out the data from each variety into a vector:
+```{r}
+Variety_A <- data_1$Root_length[data_1$Variety == 'A']
+Variety_B <- data_1$Root_length[data_1$Variety == 'B']
+```
+
+Use these variables below for your calculations.
+
+## Estimate the difference in root lengths between the two varieties
+You can check your answers below with the `t.test` function, but you must write out the calculations by hand. You can use functions like `mean()` and `sd()`, `pnorm`, `qt`, etc.
+```{r}
+
+```
+
+> ENTER YOUR RESPONSE HERE
+
+## Estimate the standard error of this difference. Assume the variances of the two varieties are the same, and find a pooled estimate of the variance.
+```{r}
+
+```
+
+> ENTER YOUR RESPONSE HERE
+
+## Form a 90% confidence interval for this difference
+```{r}
+
+```
+
+> ENTER YOUR RESPONSE HERE
+
+## Is it likely to have observed this large a difference by chance if there were actually no difference?
+```{r}
+
+```
+
+> ENTER YOUR RESPONSE HERE
+
+## Repeat the analysis using the `lm` and `emmeans` functions. Do you get the same answer?
+```{r}
+library(emmeans)
+```
+
+> ENTER YOUR RESPONSE HERE
+
+## Make the model diagnostic plots shown in lab. Is there reason to be concerned about any of the model assumptions?
+```{r}
+```
+
+> ENTER YOUR RESPONSE HERE
+
+## Calculate the power of the test to detect a difference of 3cm, with n=16 and alpha = 0.1. Assume the within-variety standard deviation is is 2.5cm
+```{r}
+# see: ?power.t.test
+
+```
+
+> ENTER YOUR RESPONSE HERE
+
+## Prepare a table showing the number of replicates required to detect significant differences (alpha = 0.01, power = 0.9) between means that are 1, 2, 4, 8, or 16 cm apart, assuming that the population standard deviation is 4cm. Use the function `power.t.test`. How much easier is it to detect a difference of 16cm than one of 1 cm?
+```{r}
+delta = c(1,2,4,8,16)
+reps = c(NA,NA,NA,NA,NA)
+
+# Here's a hit at how to calculate the sample size for the first delta
+# reps[1] <- power.t.test(n = ?,  # make sure to fill in ALL of the ?
+#                         delta = delta[1],
+#                         sd = ?,
+#                         sig.level = ?,
+#                         power = ?,
+#                         type = ?,
+#                         alternative = ?
+#                           )$n
+
+# Here we make a table of the results. 
+ans_4.4 <- data.frame(delta,reps)
+ans_4.4
+```
+> ENTER YOUR RESPONSE HERE
+

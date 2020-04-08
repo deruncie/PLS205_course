@@ -1,0 +1,159 @@
+---
+title: "HW3"
+output: 
+ html_notebook:
+    toc: true
+    toc_float: true
+    number_sections: true
+---
+Use this R Notebook document to answer the questions and document your work. 
+Enter the R code used to answer each question in the corresponding R code chunk. 
+Write any textual explanations **outside** of the chunks. When we grade, we will *hide* the code and just look at the R output and your written answers.
+Attempt to clean up your code as much as possible so that only the necessary lines remain. 
+
+When you are done:
+
+1. Select 'Run All' from the 'Run' dropdown menue.
+2. Save (File -> Save)
+3. Click 'Preview' to bring up the `HW1.nb.html` file. Check through this to make sure it rendered correctly.
+4. Upload the `HW1.nb.html` to Canvas.
+
+---
+
+# Question 1
+
+In lab, we analyzed an experiment with subsamples. Multiple soil samples were taken per plot.
+It turns out that in a balanced experiment where evey experimental unit has the same number of subsamples,
+you will get *exactly* the same answers if you first average the subsamples into a single mean response per plot,
+and then analyze the averaged data.
+
+In this question, I want you to repeat the analyses presented in Lab3 after first averaging the subsamples per plot.
+
+The following code loads the Sample-level data from lab and averages the Samples per Plot:
+
+```{r}
+clover <- read.csv('Clover_data.csv')
+clover_means <- aggregate(NLevel ~ Plot + Strain,clover,FUN = mean)
+str(clover_means)
+```
+
+## Explain why the soil samples are subsamples, not experimental units
+
+> Enter your response here.
+
+## Provide a new design table for the averaged data
+
+**Design**: Completely randomized design
+
+| Structure | Variable | Type | # levels | Experimental Unit |
+|-----------|----------|------|----------|-------------------|
+| Treatment |          |      |          |                   |
+| Design    |          |      |          |                   |
+| Response  |          |      |          |                   |
+
+## Write the model for the averaged data and fit it with the appropriate model function
+```{r}
+
+```
+
+## Show appropriate diagnostic plots and assess whether the data satisfy the model assumptions
+Compare the plots to those generated in lab.
+Note: To replicate the `qqplot` and `Scale-Location` plot shown in Lab, you can use `plot(model,which=2:3)`
+```{r}
+par(mfrow=c(1,2))
+```
+
+> Enter your response here
+
+## Provide 95% confidence intervals for the effect of each of the 5 new strains relative to the control strain
+Compare your results to the results from the full data in R.
+```{r}
+
+```
+
+> Enter your response here
+
+
+---
+
+# Question 2
+A Pharmacy is testing 5 new cough syrups. Two are derived from a steroid compoind, and two from dexamethasone. 
+The researchers include the current standard drug as a control, and label the syrups A-E so that the administering doctors do not
+know the identity of the drug (a double-blind study). Each drug was administered to 5 different people. 
+Below is the average coughs/hour of the replications:
+
+| Drug            |       |       |       |       |       |
+|-----------------|-------|-------|-------|-------|-------|
+| A_Steroid       | 17.13 | 31.26 | 24.74 | 29.08 | 36.69 |
+| B_Steroid       | 20.82 | 45.82 | 29.52 | 27.35 | 24.08 |
+| C_Dexamethasone | 29.08 | 53    | 48.69 | 42.13 | 36.63 |
+| D_Dexamethasone | 31.26 | 30.17 | 41.04 | 17.13 | 11.69 |
+| E_Old_standard  | 55.17 | 49.74 | 48.62 | 37.78 | 35.61 |
+
+```{r}
+cough_data = read.csv('Coughing.csv')
+str(cough_data)
+```
+
+## Describe the design of this experiment in detail.
+
+**Design**: Completely randomized design
+
+| Structure | Variable | Type        | # levels | Experimental Unit |
+|-----------|----------|-------------|----------|-------------------|
+| Treatment |          |             |          |                   |
+| Design    |          |             |          |                   |
+| Response  |          |             |          |                   |
+
+## Visualize the data using a boxplot
+Does it appear visually that there are differences among drugs? Do you see any data quality issues?
+```{r}
+
+```
+
+> ENTER YOUR RESPONSE HERE
+
+## Assess whether the assumptions of normality and equality of variances are satisfied by this data.
+```{r}
+```
+
+> ENTER YOUR RESPONSE HERE
+
+## Estimate the effect of each of the drugs relative to the old standard 
+How strong is the evidence that any of the new drugs improve on the old standard?
+Provide appropriate 95% confidence intervals for each estimate
+Use `ref = X` in the call to emmeans to control which treatment level is treated as the control.
+```{r}
+
+```
+
+> ENTER YOUR RESPONSE HERE
+
+## The company wants to move forward with a single drug - can you recommend one of the drugs over all the others?
+This asks you to declare one drug to perform better than all others. 
+- If you choose to recommend a drug, be very specific about what criteria you used, and declare your confidence in this conclusion.
+- If you choose not to recommend any specific drug, declare why you are not able to declare the best-performing drug the winner?
+```{r}
+
+```
+
+> ENTER YOUR RESPONSE HERE
+
+## Now, the company decides they do want to release a new Steroid drug, and a new Dexamethasone drug. 
+The following code splits the data into two separate datasets for each class of drug.
+Directly compare the two steroid drugs, and separately compare the two Dexamethasone drugs. 
+**Can you recommend either steroid drug? Either Dexamthasone drug?**
+Use alpha = 0.05
+```{r}
+steroid_data <- subset(cough_data,Type == 'Steroid')
+Dexamethasone_data <- subset(cough_data,Type == 'Dexamethasone')
+
+```
+Your analysis should differ qualitatively from your analysis above (two drugs that were not distinguishable above are distinguishable here)
+
+- Why would this analysis differ from the previous analysis? Differences may include: the set of questions, the calculation of SE, and the calculation of p-values / Confidence intervals
+- Are the above p-values reasonable to report as evidence for a difference between either of the two pairs of drugs?
+
+> ENTER YOUR RESPONSE HERE
+
+

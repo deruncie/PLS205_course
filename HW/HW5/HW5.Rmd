@@ -1,0 +1,105 @@
+---
+title: "HW5"
+output: html_notebook
+---
+
+```{r}
+library(ggplot2)
+library(ggplot2)
+library(emmeans)
+```
+
+
+# Question 1
+
+Consider the same experiment that you studied in HW4:
+
+> To study the effect of burial time on germination and dormancy of *Hordeum murinum ssp. leporinum* (Hare Barley), 
+> overwintering seeds were placed in bags in a field, and then removed and tested at six time intervals (0, 30, 60, 90, 120, and 150 days after > burial). The design was a completely randomized design, with 5 replicate bags per burial time.
+> Each bag contained 200 seeds. At the designed time, each bag was opened, and then the seeds were split evenly between two 
+> germination trays, and the number of germinating seeds was measured in each tray.
+
+Considering what we discussed in lecture this week, re-consider your choice over experimental units. 
+Is "Bag" really an appropriate experimental unit for the effect of burial time?
+
+## 1 Provide a critique of this experimental design
+Start by re-making the design table, and carefully considering the experimental units.
+Is it sufficient to answer the intended question?
+
+**Design**: Completely randomized design
+
+| Structure | Variable   | Type        | # levels | Experimental Unit |
+|-----------|------------|-------------|----------|-------------------|
+|           |            |             |          |                   |
+|           |            |             |          |                   |
+|           |            |             |          |                   |
+|           |            |             |          |                   |
+
+> ENTER YOUR RESPONSE HERE
+
+## 2 What would you recommend to the researcher in terms of how she should report the results?
+What type of analysis would you recommend?
+How should the interpret the treatment effect they observe?
+
+> ENTER YOUR RESPONSE HERE
+
+
+# Question 2
+
+A researcher conducted a study comparing the effect of different ground covers on nitrous oxide fluxes from apple orchard soils. She randomly assigned the inter-row spaces of an orchard block to one of four treatments: 1) no cover (Bare); 2) fescue (Grass); 3) white clover (Legume); and, 4) fescue-clover mix (Mix). Each treatment level was replicated in 6 plots. After rain events, emissions were collected from each plot, analyzed, and the emitted nitrous oxide was calculated in g N~2~O ha^-1^ d^-1^. Average emissions for each plot are reported below.
+
+| Rep |  Bare | Grass | Legume |  Mix  |
+|:---:|:-----:|:-----:|:------:|:-----:|
+|  1  | 44.79 | 21.59 |  20.08 | 21.48 |
+|  2  | 53.71 | 21.58 |  16.76 | 24.46 |
+|  3  | 68.69 | 25.73 |  15.15 | 25.47 |
+|  4  | 70.46 | 32.08 |  17.72 | 27.02 |
+|  5  | 88.11 | 27.60 |  15.13 | 18.52 |
+|  6  | 95.53 | 22.11 |  19.98 | 21.54 |
+
+```{r echo=FALSE}
+NO_data = read.csv('HW5_data.csv')
+str(NO_data)
+```
+
+## 3 Describe the design of this experiment in detail.
+
+**Design**: Completely randomized design
+
+| Structure | Variable   | Type        | # levels | Experimental Unit |
+|-----------|------------|-------------|----------|-------------------|
+|           |            |             |          |                   |
+|           |            |             |          |                   |
+|           |            |             |          |                   |
+
+## 4 Test the necessary assumptions of ANOVA. Report on the results.
+
+```{r}
+par(mfrow=c(1,2))
+```
+
+> ENTER YOUR RESPONSE HERE
+
+## 5 Perform an appropriate transformation of the data. Re-check the assumptions of ANOVA, and report the results.
+
+```{r}
+par(mfrow=c(1,2))
+```
+
+> ENTER YOUR RESPONSE HERE
+
+## 6 Provide estimates of effects of the various ground covers relative to Bare ground on both the original and transformed data ($\alpha = 0.05$). 
+Describe and compare the results of both models. Be sure to provide units for the effect sizes on both scales.
+
+```{r}
+```
+
+> ENTER YOUR RESPONSE HERE
+
+## 7 Provide estimates and confidence intervals for the means of the 4 treatment.
+**Are the means greater or less than the means estimated on the un-transformed scale?**
+
+```{r}
+```
+
+> ENTER YOUR RESPONSE HERE

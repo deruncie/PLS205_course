@@ -1,0 +1,205 @@
+---
+title: "HW5"
+output: html_notebook
+---
+
+```{r}
+library(ggplot2)
+library(ggplot2)
+library(emmeans)
+```
+
+> Grading Notes:
+>
+> For questions that require a text answer:
+> Full credit: requires an answer to each question asked. Your explanations need to valid
+and logical. You don't need to use the same words as the key, but the meaning needs to be complete.
+> Assign partial credit for answers that are incomplete. For multi-part questions, divide points
+approximatly equally unless otherwise specified.
+>
+> For all questions, if you get the right answer using a different approach than I use, that is fine.
+
+> Fill out the table below for each question (you can copy to another text file and fill it out there)
+Then copy the table and paste it into the comments section for the submitted assignment on Canvas.
+
+Grading table
+
+| Question | Max  | Score |
+|----------|------|-------|
+| 1        | 6    |       |
+| 1        | 6    |       |
+| 3        | 6    |       |
+| 4        | 4    |       |
+| 5        | 6    |       |
+| 6        | 6    |       |
+| 7        | 6    |       |
+| Total    | 40   |       |
+
+# Question 1
+
+Consider the same experiment that you studied in HW4:
+
+> To study the effect of burial time on germination and dormancy of *Hordeum murinum ssp. leporinum* (Hare Barley), 
+> overwintering seeds were placed in bags in a field, and then removed and tested at six time intervals (0, 30, 60, 90, 120, and 150 days after > burial). The design was a completely randomized design, with 5 replicate bags per burial time.
+> Each bag contained 200 seeds. At the designed time, each bag was opened, and then the seeds were split evenly between two 
+> germination trays, and the number of germinating seeds was measured in each tray.
+
+Considering what we discussed in lecture this week, re-consider your choice over experimental units. 
+Is "Bag" really an appropriate experimental unit for the effect of burial time?
+
+## 1 Provide a critique of this experimental design
+Start by re-making the design table, and carefully considering the experimental units.
+Is it sufficient to answer the intended question?
+
+**Design**: Completely randomized design
+
+> One option is to choose `Days` as the experimental unit. 
+> This is justified by the fact that all bags for the 30-day treatment were treated together, and separately from the bags for any of the other treatments
+> In this case, we could "draw a box" around all the Bags for each treatment based on the date of sampling.
+> In this case, the design table would be:
+
+| Structure | Variable   | Type        | # levels | Experimental Unit |
+|-----------|------------|-------------|----------|-------------------|
+| Treatment | Days       | Numeric/Cat | 6        | Days              |
+| Design    | Bag        | Categorical | 30       |                   |
+| Design    | Tray       | Categorical | 60       |                   |
+| Response  | Germinants | Numeric     | 60       |                   |
+
+> Another option would be to say that the experiment is un-replicated.
+> If the treatment is really "time since planting", its not really clear if each Date is an independent replicate of time per se. 
+> What evidence do we really have that the 60 day treatment here is representative of other 60-day periods
+> Or more specifically, that the difference between 90 days and 60 days (which is what we model with a trend-line) is caused by the 30 day passage of time
+> rather than than somthing specific to either the 90th day or the 60th day, or the exact procedures used for sampling the bags on those two days.
+> Since the dates aren't interspersed, it's impossible to say statistically that differences between the days is due to the passage of time vs unique differences between individual days.
+
+| Structure | Variable   | Type        | # levels | Experimental Unit |
+|-----------|------------|-------------|----------|-------------------|
+| Treatment | Days       | Numeric/Cat | 6        | None              |
+| Design    | Bag        | Categorical | 30       |                   |
+| Design    | Tray       | Categorical | 60       |                   |
+| Response  | Germinants | Numeric     | 60       |                   |
+
+> (6 points) Both answers can receive full credit if fully justified. At a minimum the design table needs to be correct and consistent with the answer (3 points)
+> 3 points for describing the fact that all bags on the same day are treated together so they are not true replicates of the Days treatment
+
+## 2 What would you recommend to the researcher in terms of how she should report the results?
+What type of analysis would you recommend?
+How should the interpret the treatment effect they observe?
+
+> Depending on the answer to 1 above, the recommendation could either be to attempt to model a trend with Days as the experimental unit. 
+
+> In the first case, the maximum degree for a polynomial model would be 4, since a degree 5 polynomial would have 5 parameters + 1 for baseline, and there are only 6 experimental units, so there would be 0 DfE.
+> We can fit a degree 1,2,3 or 4 polynomial, though, with (1|Days) in the model, and select an appropriate model. However, the confidence bands will be very wide.
+
+> In the second case, the recommendation would be not to do a statistical analysis of these data, but rather report the trend as an observation (ie without confidence bands). 
+> This is what Hurlbert 1984 calls a mensurative experiment, and while a valid experiment, is not one that you can make any statement of confidence in the estimates.
+
+> (6 points) Answers should be consistent with Q1. If Days was chosen, he answer should discuss the width of the confidence intervals (final 3 points).
+If a mensurative experiment is described (doesn't need to be named), then the answer should describe why no confidence intervals can be drawn. (final 3 points)
+If Q1 said that Bags were still the EU, then the analysis from HW4 should be described (final 3 points)
+
+
+# Question 2
+
+A researcher conducted a study comparing the effect of different ground covers on nitrous oxide fluxes from apple orchard soils. She randomly assigned the inter-row spaces of an orchard block to one of four treatments: 1) no cover (Bare); 2) fescue (Grass); 3) white clover (Legume); and, 4) fescue-clover mix (Mix). Each treatment level was replicated in 6 plots. After rain events, emissions were collected from each plot, analyzed, and the emitted nitrous oxide was calculated in g N~2~O ha^-1^ d^-1^. Average emissions for each plot are reported below.
+
+| Rep |  Bare | Grass | Legume |  Mix  |
+|:---:|:-----:|:-----:|:------:|:-----:|
+|  1  | 44.79 | 21.59 |  20.08 | 21.48 |
+|  2  | 53.71 | 21.58 |  16.76 | 24.46 |
+|  3  | 68.69 | 25.73 |  15.15 | 25.47 |
+|  4  | 70.46 | 32.08 |  17.72 | 27.02 |
+|  5  | 88.11 | 27.60 |  15.13 | 18.52 |
+|  6  | 95.53 | 22.11 |  19.98 | 21.54 |
+
+```{r echo=FALSE}
+NO_data = read.csv('HW5_data.csv')
+str(NO_data)
+```
+
+## 3 Describe the design of this experiment in detail.
+
+**Design**: Completely randomized design
+
+| Structure | Variable   | Type        | # levels | Experimental Unit |
+|-----------|------------|-------------|----------|-------------------|
+| Treatment | Cover      | Categorical | 4        | Plot              |
+| Design    | Plot       | Categorical | 24       |                   |
+| Response  | Flux       | Numeric     | 24       |                   |
+
+> Key things are the experimental unit and the # of levels. It is OK if the names are different
+as long as it is clear what each name refers to. 
+
+> (4 points)
+
+## 4 Test the necessary assumptions of ANOVA. Report on the results.
+
+```{r}
+par(mfrow=c(1,2))
+lm1 = lm(Flux ~ Cover,NO_data)
+plot(lm1,which=c(2,3))
+```
+
+> We see a strong signal of increased variance for larger means (Scale-Locaiton plot) We also see large outliers in both the positive and negative direction (Normal QQ plot). 
+Both demonstrate failure of ANOVA assumptions. However, the increase of variance with the mean suggests a log transform may be appropriate
+
+> (6 points) Needs to interpret the deviations in both plots (3 each)
+
+## 5 Perform an appropriate transformation of the data. Re-check the assumptions of ANOVA, and report the results.
+
+```{r}
+lm_log2 = lm(log2(NO_data$Flux) ~ Cover,NO_data)
+par(mfrow=c(1,2))
+plot(lm_log2,which=c(2,3))
+```
+
+> After log2 transforming, the Normal Q-Q plot shows not deviation from normality. The Scale-Location plot shows some mild increase in variance of larger means, but much less severe than before transforming. 
+
+> These diagnostic plots would look identical if the log() or log10() functions were used instead. The power transformation would be acceptable too, but power transformations do not lead to as clear conclusions as log transformations.
+
+> (6 points). Log, sqrt, or Power could be used (4 points). The plots should be shown and discussed (2 points)
+
+## 6 Provide estimates of effects of the various ground covers relative to Bare ground on both the original and transformed data ($\alpha = 0.05$). 
+Describe and compare the results of both models. Be sure to provide units for the effect sizes on both scales.
+
+```{r}
+Flux_means_original = emmeans(lm1,specs = 'Cover')
+summary(contrast(Flux_means_original,method='trt.vs.ctrl'),level = 0.95,infer = c(T,T))
+Flux_means_log2 = emmeans(lm_log2,specs = 'Cover')
+summary(contrast(Flux_means_log2,method='trt.vs.ctrl'),level = 0.95,infer = c(T,T))
+```
+
+> Both with an without transformations, we find that all treatments were significantly different from the control. 
+
+> The effect sizes on the un-transformed scales are differences in means (units = gN20 /ha/d). The interpretation is:
+The grass treatment resulted in a decrease of 45g N20 /ha/d (CI: decrease of 30-60 g).
+
+> The effect sizes on the log2-transformed scales are log2(multiplicative factors), or log2-fold changes. The interpretation is:
+The grass treatment resulted in a decrease of N20 /ha/d by a factor of 2^-1.45 = 0.37, or about 1.5 halvings of the N20 emmision rate.
+
+> If the log-transformation was used, the interpretation would be:
+The grass treatment resulted in a decrease of N20 /ha/d by a factor of e^-1.0 = 0.37. 
+Since this log(fold-change) is bigger than ~0.2-0.3, the approximation of delta as percent change is not very accurate.
+
+> (6 points) trt.vs.ctrl contasts should be used (2 points). Conclusions should be made for both analyses with appropriate units (4 points). If sqrt or power transformations were used, then no units are possible on the transformed scale.
+
+## 7 Provide estimates and confidence intervals for the means of the 4 treatment.
+**Are the means greater or less than the means estimated on the un-transformed scale?**
+
+```{r}
+transformed_estimates = as.data.frame(Flux_means_log2)
+transformed_estimates$De_trans_estimate = 2^(transformed_estimates$emmean)
+transformed_estimates$De_trans_lower.CL = 2^(transformed_estimates$lower.CL)
+transformed_estimates$De_trans_upper.CL = 2^(transformed_estimates$upper.CL)
+transformed_estimates[,c('De_trans_estimate','De_trans_lower.CL','De_trans_upper.CL')]
+
+as.data.frame(Flux_means_original)[,c('emmean','lower.CL','upper.CL')]
+
+# or simpler:
+summary(Flux_means_log2,type='response')
+
+```
+
+> De-transformed means after a log transformation are always lower than the means on the un-transformed scale. The name of these values is the "geometric mean"
+
+> (6 points) The de-transformation should be correct and complete (both means and CIs 4 points). The comparison with un-transformated means (2 points)

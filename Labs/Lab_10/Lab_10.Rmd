@@ -1,0 +1,338 @@
+---
+title: "Lab 9 - ANCOVA and missing data"
+author: Daniel Runcie. 
+output: 
+  html_notebook: 
+    toc: true 
+    toc_float: true 
+---
+
+```{r echo = F,warning=FALSE,message=FALSE}
+library(emmeans) 
+library(ggplot2)
+```
+
+# Using Covariates in an ANOVA
+Blocking and using covariables are related techniques for reducting the amount of variation that is 
+unexplained by the experimental model (i.e. error) so that treatment means are measured with 
+greater precision and power. 
+
+To use blocks, you must be able to identify groups of experimental units that will be similar *a priori*. 
+If successful, blocks control for *all* factors that differ among groups of experimental units.
+The problemm is that the more blocks you use, the fewer degrees of freedom you have to estimate experimental error.
+Also, if experimental error is caused by gradients across the experimental units, it can be difficult to 
+find groups of eu's that are similar. Divisions among blocks can be fairly arbitrary.
+
+Covariates are another technique to control for variation in experimental units. As with blocks, observations
+are corrected for uncontrolled factors that differ among experimental units. But instead of using the
+mean response within a block as the correction factor, a separate measure on the same experimental unit is used
+as the correction factor. The correction itself works very similarly to that for incomplete blocks.  
+Treatment means are estimated *marginally* over the whole range of the covariate (ie averaged) so that the
+treatment means can be compared.
+
+The advantage of covariates is that each covariate *costs* only a single degree of freedom, because we
+assume that the relationship between covariate and response is linear. Non-linear relationships, and 
+covariate*treatment interactions both weaken the analysis, just as they do for blocks, and so their effects
+should be assessed by model diagonstics.
+
+## Example 1
+A grower would like to test the effect of three different pesticides on yield in common bean. 
+The grower plants a large field with common bean and divides the field into 6 homogeneous field sections. 
+Each section is divided into 3 equal subsections, which are randomly assigned one of the 3 pesticides. 
+The grower knows that the field has small patches with different levels of organic matter that can affect yield potential. 
+Before starting the experiment, he measured the organic matter content of each subsection in grams of organic matter per kilogram of soil. 
+At the end of the season, the grower measured grain yield of each experimental unit in bushels per acre.
+
+
+### Prep the data
+Load the data, check:
+```{r}
+beans <- read.csv('bean_yield.csv')
+str(beans)
+```
+
+`Field.section` needs to be converted to a factor
+```{r}
+beans$Field.section = factor(beans$Field.section)
+```
+
+### Experimental design
+
+| Structure | Variable                       | Type        | # levels | Experimental Unit |
+|-----------|--------------------------------|-------------|----------|-------------------|
+| Treatment | Pesticide                      | Categorical | 3        | Plot              |
+| Design    | Field.Section                  | Categorical | 6        |                   |
+|           | Pesticide:Field.Section        | Categorical | 18       |                   |
+|           | Plot                           | Categorical | 18       |                   |
+| Covariate | OrgMat                         | Numeric     | 18(1)    |                   |
+|           | OrgMat:Pesticide               | Numeric     | 18(3)    |                   |
+|           | OrgMat:Field.Section           | Numeric     | 18(6)    |                   |
+|           | OrgMat:Pesticide:Field.Section | Numeric     | 18(18)   |                   |
+| Response  | Yield                          | Numeric     | 18       |                   |
+
+The only new feature here is the section for **Covariates**. 
+
+The *Design* section is like a standard RCBD. 
+We list the Treatment:Block combinations here because they are a potential source of variation. 
+However, they are aliased with Plot, and have the same number of levels as Yield, so will not enter into our model.
+
+> Question: Why is Experimental Unit **Plot** instead of **Pesticide:Field.Section**? Do you agree with this choice?
+
+The **Covariate** section is new. In it, we describe potential ways that the covariate could enter into our analysis.
+The interpretation of the rows in the table is:
+
+- **OrgMat**: The average effect of OrgMat on Yield
+- **OrgMat:Pesticide**: The unique effects of OrgMat on Yield for each Pesticide treatment separately.
+- **OrgMat:Field.Section**: The unique effects of OrgMat on Yield, for each Field.Section separately.
+- **OrgMat:Pesticide:Field.Section**: The unique effects of OrgMat, on Yield for each combination of Pesticide treatment and Field.Section separately.
+
+These are really just the same as Block:Treatment combinations (where treatment effects may vary across blocks).
+Here, the effects of OrgMat on Yield may vary across either blocks or treatments.
+
+Just like in the Design part of the table, we've included all possible Covariates here, even ones that 
+are not possible (or useful) to include in our final model.
+
+The other new feature of the Covariate section is the *# levels* section. Here we list two numbers: 18(1), or 18(3), etc.
+
+The first number is the number of unique values for the covariate. Since the covariate was measured separately for each of the 
+18 plots, there are 18 unique numbers. We can verify this like this:
+
+```{r}
+length(unique(beans$OrgMat))
+```
+
+> In some designs, we may have a covariate measured on other experimental units, rather than the observational unit. 
+For example, in a split plot, we may measure a covariate on the MainPlot, rather than on each SubPlots. 
+In this case, the first number would be the number of MainPlots.
+
+The second number is the number of unique groups for the Covariate. For example, there are 3 Pesticides, 
+so the *OrgMat:Pesticide* variable has three Yield ~ OrgMat effects, one for each Pesticide.
+
+### Linear model
+
+We write a linear model for analyses with covariates similarly to analyses with incomplete blocks.
+
+> Notes: Similarly to models with Blocks, after writing a fully-specified model, we will often examine
+whether it is reasonable to simplify the model by removing Block:Treatment or Covariate:Treatment interaction terms.
+Ideally, when using Blocks or Covariates, the effects of the Treatments are consistant across Blocks or across 
+the range of the covariates, so these terms are not necessary.
+
+Start with a fully-specified model. The following rules apply:
+
+1. Include all terms in the design table except:
+
+- Drop any Design terms that have the same number of levels as the Response.
+- For sets of Design terms with the same number of levels, check that the levels are not aliased (ex. use `table()`). If they are, keep only one.
+   - If one of these is an experimental unit, be sure to keep that term if possible!
+- Drop any Covariate terms that have the same number of groups (second number) as the Response
+- Drop any Covariate terms that have the same number of unique values (first number) as groups (second number)
+- For sets of terms for the same covariate with the same number of groups, check that the groups are not aliased (ex. use `table()`). If they are, keep only one.
+
+2. Put Covariate terms first, then Design terms, then treatment terms. Treatment:Covariate terms can go at the end. Treatment:block terms should ideally be made into a new model term (interaction(Treatment,block)) so that R will keep them at the front of the model.
+
+- If the grouping variable is random, the format is (0+Covariate|Group) instead of Covariate:Group
+
+
+Following these rules, we end up with the following model:
+
+```{r}
+full_model <- lm(Yield ~ OrgMat + Field.section + OrgMat:Field.section +
+                   Pesticide + OrgMat:Pesticide, beans)
+```
+
+### Checking model assumptions
+
+Before analyzing this model, we should consider the model assumptions. For analyses with covariates, we assume:
+
+1. The covariate is independent of the treatment.
+2. The covariate is linearly correlated with the response, with the same slope across treatments (and blocks)
+3. The model errors are normally distributed and with similar variance across treatments and values of the blocks and covariates.
+
+Assumption 3 is critical, and is the same as for every other linear model, and assessing it will following the same techniques.
+
+Assumptions 1 and 2 are unique to covariates. These are actually not hard rules, but the utility of the covariates
+will be reduced if either is violated.
+
+**Assumption 1:** In this experiment, *OrgMat* was measured before treatments were applied. 
+Therefore it must be independent of the treatments. 
+Covariates measured during or after the experiment tend to be less useful because the treatment can affect their values directly, 
+and then indirectly affect the response.
+However, it is still possible that due to random chance, certain treatment levels have different average values
+of the covariate. If so, this will **decrease** our power. We can test this by treating the covariate as a response in an ANOVA.
+
+```{r}
+cov_model <- lm(OrgMat ~ Field.section + Pesticide, beans)
+anova(cov_model)
+```
+
+> We see that OrgMat varies among the 6 field sections. However, there is little difference among the three Pesticides.
+> The variation among field sections will not negatively affect our analysis since we are not interested
+in differences among the field sections.
+
+> Had OrgMat varied a lot among Pesticide treatments (ie large Sum Sq), we might decide not to use it as a covariate.
+
+**Assumption 2:** The best way to verify that the Covariate is linearly related to the Response is to make a scatter-plot of the data.
+
+```{r}
+ggplot(beans,aes(x=OrgMat,y=Yield)) + geom_point()
+```
+
+> The relationship looks linear. There is no reason to consider more complex (ie polynomial) models for the covariate.
+
+We also want to evaluate whether the Response~Covariate relationship variates among treatments. We can do this visually by
+coloring the points by Pesticide, and fitting lines separately to each group
+```{r}
+ggplot(beans,aes(x=OrgMat,y=Yield)) + geom_point(aes(color = Pesticide)) + geom_smooth(aes(color = Pesticide),se=F,method='lm')
+```
+
+> The slopes look slightly different. The differences among Pesticides appears to be smaller 
+when there is little Organic Matter than when there is a lot. This indicates that might might need to report the effect of 
+Pesticide differences **as a Function of OrgMat**. This certainly complicates the analysis!
+
+> However, is this change in treatment differences large enough to matter?
+
+We can use our full model to evaluate this using an ANOVA
+```{r}
+anova(full_model)
+```
+
+> From this, we find little evidence that the differences among Pesticides is affected by Orgmat (small Sum Sq, large P-value).
+Therefore, it is reasonable to assume a constant relationship.
+
+> It also appears reaonsable to assume the effects of OrgMat on Yield are constant across field sections. (Why?) So we can safetly drop this term
+from our model too.
+
+Given these, we can use the simplified reduced model:
+```{r}
+reduced_model <- lm(Yield ~ OrgMat + Field.section + Pesticide, beans)
+```
+
+**Assumption 3**: Once we have decided on our final model, we run the standard diagnostics on it:
+```{r}
+par(mfrow=c(1,2))
+plot(reduced_model,which=2:3)
+```
+
+> No large problems here. There are some moderate outliers, and maybe some increase in variance for lower values of yield.
+So we should be somewhat cautious about our results, but it's OK to continue.
+
+### Analysis
+
+The analysis now follows as normal:
+
+Evaluate whether there is any difference among Pesticides:
+```{r}
+anova(reduced_model)
+```
+
+Compure pairwise differences among pesticides
+```{r}
+reduced_model_means = emmeans(reduced_model,specs = 'Pesticide')
+contrast(reduced_model_means,method='pairwise')
+```
+
+> We can distinguish A and C from B. 
+
+> Note: The SE's are different for each contrast. Why? The design was an RCBD. However, covariates act like incomplete blocks, and
+so analyses with covariates have properties more like incomplete block designs.
+
+### Compare to analysis without covariate.
+
+Did we gain anything by using this as a covariate?
+
+We could re-run the analysis without a covariate, just as an RCBD:
+
+```{r}
+rcbd_model <- lm(Yield ~ Field.section + Pesticide, beans)
+anova(rcbd_model)
+rbcd_model_means = emmeans(rcbd_model,specs = 'Pesticide')
+contrast(rbcd_model_means,method = 'pairwise')
+```
+
+> All confidence interavls are bigger. Therefore including the covariate did improve our ability to describe the among-Pesticide differences
+
+Perhaps more interestingly, we could test whether once we've included the covariate, we really needed to block by Field.section.
+We lose 5 DfE from the Field.section blocks. But we know from above that the covariate differs among Field sections, and in our 
+ANOVA (with the covariate), field.section did not explain much variation. Here's the model ignoring these blocks:
+
+```{r}
+cov_only_model <- lm(Yield ~ OrgMat + Pesticide,beans)
+anova(cov_only_model)
+cov_only_model_means = emmeans(cov_only_model,specs = 'Pesticide')
+contrast(cov_only_model_means,method = 'pairwise')
+```
+
+> Our analysis is actually more powerful with only the covariate, not the blocks! Why?
+
+> It's because the Field.sections are really not great blocks. There's a lot of within-block variation (caused by variation in OrgMat).
+So the 5 DfE are not well used by the blocks. Directly modeling the effect of OrgMat (instead of trying to block by it) proves more effective here.
+
+## Special notes on ANOVA with covariates
+Unfortunately, analyses with covariates provide challenges to R's default ANOVA functions, especially when 
+there are multiple covariates and/or blocks in an analysis. As an example, say we wanted to analyse
+the fully-specified model we used above:
+
+```{r}
+full_model <- lm(Yield ~ OrgMat + Field.section + OrgMat:Field.section +
+                   Pesticide + OrgMat:Pesticide, beans)
+anova(full_model)
+```
+
+Our goal is to evaluate whether there is any effect of Pesticide. There are two relevant rows
+of the ANOVA table: **Pesticide** and **OrgMat:Pesticide**. We're looking at both, so we'd need to adjust our alpha for two tests.
+
+> However, note that the two interaction terms are reported **AFTER** Pesticide. 
+Since the covariates are really incomplete blocks, we want to test Pesticide after *OrgMat:Field.section*. 
+
+It's difficult to do this directly in R. 
+Remember that R's ANOVA table is formed internally by sequentially dropping terms and monitoring how `Sum Sq` increases in reduced models.
+Unfortunately, the `anova()` function is not flexible in what order it chooses to drop terms. 
+It will always drop all interactions terms before any main effect terms.
+
+So, to do this right, you have to manually drop the terms in the correct order. We can do this with the `update` function.
+To use `update()`, you give it the original model, and then specify which terms to remove from the model.
+
+Following the normal strategy for testing for ANY Pesticide effect when there is the chance of interactions, 
+we first test *OrgMat:Pesticide*, and then if it's not siginificant, we then test (*OrgMat:Pesticide + Pesticide*)
+
+1. To test the importance of the *OrgMat:Pesticide* term, fit a new model without this term.
+
+```{r}
+no_OrgMatTrt <- lm(Yield ~ OrgMat + Field.section + OrgMat:Field.section +
+                   Pesticide, beans)
+```
+
+Then, use `anova()` to compare the full and reduced model.
+```{r}
+anova(no_OrgMatTrt,full_model)
+```
+
+> This is not siginificant (p > alpha), so we will move on to testing for a main effect of Pesticide.
+
+2. Now, starting from the no-interaction model, now drop the Pesticide main effect, and compare this model to the no-interaction model
+```{r}
+no_trt_model <- lm(Yield ~ OrgMat + Field.section + OrgMat:Field.section, beans)
+anova(no_trt_model,no_OrgMatTrt)
+```
+The p-value for this comparison is the p-value for the 2nd test (of no effect of Pesticide at all). Because it's a second test,
+we would compare its p-value to alpha/2. It's also not significant here. So we conclude we have no evidence of an effect of Pesticide.
+
+> Question: Why do we come to this conclusion here, while we found evidence of an effect above?
+
+> The answer is that here we have the OrgMat:Field.section term. This term costs 5 DfE without accounting for much SSE, leaving us with DfE = 2, which is
+not enough to detect such small differences among the Pesticide treatments.
+
+
+**Fortunately**, this problem does not affect the *emmeans* function, so you don't have to wory about it for measuring treatment effects themselves.
+Also, it generally isn't a problem for the `anova(,mode='K')` function for `lmer()` models.
+
+
+Finally, I mentioned in class that you can get the same answers using a Type III anova. 
+To do this, use the `Anova` function from the `car` package. 
+We'll get the same answer as above for `Pesticide` this way.
+Note: we're using the reduced model without the OrgMat.Pesticide interaction for this test. This is equivalent to test 2. above.
+```{r}
+library(car)
+Anova(no_OrgMatTrt,type='III')
+```
+
