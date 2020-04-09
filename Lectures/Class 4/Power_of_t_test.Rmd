@@ -1,0 +1,108 @@
+---
+title: "Power of t-test"
+runtime: shiny
+output: html_document
+---
+Power plot
+```{r, echo=FALSE}
+
+n = 23
+alpha = 0.05
+delta = 12
+main = ''
+add_ha = T
+add_region = T
+shift_h0 = dt(0,50)
+
+power_plot = function(n = 23,delta = 12,s=12,alpha = 0.05,delta_hat = NULL,s_hat= NULL,add_ha = T,add_region = T,main = ''){
+  
+# critical values  
+  t_crit = qt(1-alpha/2,2*(n-1))
+  
+# Calculate power
+  s_dhat = sqrt(2*s^2/n)
+  power = 1-pt(t_crit,2*(n-1),delta/s_dhat)
+  
+# t distribution under H_0
+  x0 = seq(-4,4,length=100)
+  t_h0 = dt(x0,2*(n-1)) + shift_h0  
+ 
+# t distribution under H_a
+  xa = x0 + delta / s_dhat
+  t_ha = dt(xa,2*(n-1),ncp = delta / s_dhat)
+
+# make plot
+  main = paste(main,' power=',signif(power,2))
+  
+  plot(x0,t_h0,type='l',ylim = c(0,max(t_h0,t_ha)),xlim = c(-5,10),xaxt='n',lwd = 2,
+       main = main,xlab = '',ylab = 'Density',cex.main = 2,cex.lab = 2,cex.axis = 1.5,bty='n')
+  abline(v=0)
+  axis(1,at=seq(-5,10,by=1),labels=T)
+  # mtext(expression(paste(frac(hat(delta),s[hat(delta)]),'=',paste(sqrt(frac(n,2),frac(hat(delta),s)))),1,6,cex=2)
+  mtext(expression(paste(frac(hat(delta),hat(SE)))),1,6,cex=2)
+  text(-3.5,0.6,expression(paste(H[0],': ',delta,'=0')),cex=2)
+  
+  abline(h=shift_h0-0.05,lty = 2, lwd = 2)
+  text(6,0.75,expression(paste(H[0],' is true')),cex = 2)
+  
+  x_region = seq(t_crit,max(x0),length=500) 
+  dt_region = dt(x_region,2*(n-1)) + shift_h0
+  polygon(c(x_region,x_region[500:1]),y = c(dt_region,rep(shift_h0,500)),border=NULL,col = colors()[122])
+  
+  x_region = seq(min(x0),-t_crit,length=500)
+  dt_region = dt(x_region,2*(n-1)) + shift_h0
+  polygon(c(x_region,x_region[500:1]),y = c(dt_region,rep(shift_h0,500)),border=NULL,col = colors()[122])
+  arrows(c(-1,1)*t_crit,dt(t_crit,2*(n-1))+shift_h0,c(-1,1)*t_crit,0,length = .1,lwd=5,col = 2)
+  text(t_crit + 1,dt(t_crit,n-1)+shift_h0 + 0.2,substitute(paste(alpha,'=',a),list(a=alpha)),cex=2)
+  text(t_crit,dt(t_crit,n-1)+shift_h0+0.05,signif(t_crit,3),cex=2)
+  
+  arrows(t_crit,shift_h0 - 0.05,8,shift_h0-0.05,lwd = 5,col = colors()[122])
+  arrows(-t_crit,shift_h0 - 0.05,-4,shift_h0-0.05,lwd = 5,col = colors()[122])
+  
+  lines(xa,t_ha,lwd = 2)
+  # text(-3,0.2,expression(paste(H[a],' is true')),cex = 2)
+  text(6,0.2,expression(paste(H[a],' is true')),cex = 2)
+  
+  x_region = seq(max(c(min(xa),-t_crit)),t_crit,length=500)
+  dt_region = dt(x_region,2*(n-1),ncp = delta / s_dhat)
+  polygon(c(x_region,x_region[500:1]),y = c(dt_region,rep(0,500)),border=NULL,col = 'green')
+  arrows(t_crit,dt(t_crit,2*(n-1))+shift_h0,t_crit,0,length = .1,lwd=5,col = 2)
+  text(min(delta / s_dhat - 2,t_crit-1),dt(t_crit,2*(n-1)) + 0.1,expression(beta),cex=2)
+  # text(delta / s_dhat + 2,0.25,substitute(paste(H[a],': ',delta,'=',d_act),list(d_act = delta)),cex=2)
+  text(-3.5,0.2,substitute(paste(H[a],': ',delta,'=',d_act),list(d_act = delta)),cex=2)
+  
+  abline(v=delta_hat/s_hat,col=2)
+  points(delta_hat/s_hat,0,pch=21,bg=2,cex=2)
+  
+}
+```
+
+
+```{r, echo=FALSE}
+inputPanel(
+  sliderInput('nPower','n',2,50,20),
+  sliderInput('delta','delta',0,40,12),
+  sliderInput('alphaPower','alpha',0,.2,0.05),
+  sliderInput('sigma','sigma',0,40,12),
+  actionButton('reset','New sample')
+)
+renderPlot({
+  input$reset
+  n = input$nPower
+  data = data.frame(Trt = gl(2,n))
+  data$y = c(0,input$delta)[data$Trt] + rnorm(nrow(data),0,input$sigma)
+  lm1 = lm(y~Trt,data)
+  delta_hat = coef(lm1)[2]
+  s_hat = summary(lm1)$coef[2,2]
+  
+  par(mfrow=c(1,2))
+  op = par(mar=c(10,6,3,1))
+  power_plot(n = input$nPower, delta = input$delta, s = input$sigma,alpha = input$alphaPower,delta_hat =delta_hat,s_hat = s_hat,add_ha = T,add_region = T)
+  par(op)
+  with(data,boxplot(y~Trt,xlim = c(0,3),ylim = c(-20,30),main = sprintf('p = %0.03f',summary(lm1)$coef[2,4])))
+  with(data,points(y~jitter(as.numeric(Trt),.3)))#,xlab = '',xlim = c(0,3),ylim = c(-20,30),xaxt = 'n'))
+  # axis(side = 1,at = c(1,2),labels = c('Trt 1','Trt 2'))
+},height=400)
+```
+
+

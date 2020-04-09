@@ -1,0 +1,55 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+## Plots of three-way interactions in a 3-way factorial
+```{r}
+library(emmeans)
+# These are made-up data designed to show no 3-way interaction. So there's no replication or experimental error
+three_way = read.csv('Three-way.csv')
+
+three_way2 = three_way
+three_way2$factor = rnorm(nrow(three_way))
+three_way2 = rbind(data.frame(three_way2,Set=-1),data.frame(three_way2,Set=0),data.frame(three_way2,Set=1))
+three_way2$Activity2 = three_way2$Activity + three_way2$factor*three_way2$Set*30 + rnorm(nrow(three_way2),0,4)
+three_way = three_way2
+lm3 = lm(Activity2 ~ Geno*Temp*Time,three_way)
+anova(lm3)
+
+```
+### two-way interaction plots - each shows an interaction
+```{r}
+library(cowplot)
+TTi = as.data.frame(summary(emmeans(lm3,~Time:Temp)))
+ggplot(TTi,aes(x = Temp,y = emmean)) + geom_line(aes(color = Time,group = Time)) + ylab('Activity') + ggtitle('Treatment means')
+
+GT = as.data.frame(summary(emmeans(lm3,~Geno:Temp)))
+ggplot(GT,aes(x = Geno,y = emmean)) + geom_line(aes(color = Temp,group = Temp)) + ylab('Activity') + ggtitle('Treatment means')
+
+GTi = as.data.frame(summary(emmeans(lm3,~Geno:Time)))
+ggplot(GTi,aes(x = Time,y = emmean)) + geom_line(aes(color = Geno,group = Geno)) + ylab('Activity') + ggtitle('Treatment means')
+
+```
+
+### Three-way interaction plots: 
+Change in effects of Temp on Genotype **differences** between the two times.
+
+```{r,fig.width=10,fig.height=4}
+contr = as.data.frame(summary(emmeans(lm3,trt.vs.ctrl~Geno|Temp:Time)$contrasts))
+p1 = ggplot(subset(contr,contrast == 'Geno_2 - Geno_1'),aes(x = Temp,y = estimate)) + geom_line(aes(color = Time,group = Time)) + ylab('Geno_2 - Geno_1') + ggtitle('Geno effects')
+p2 = ggplot(subset(three_way,Geno != 'Geno_3'),aes(x=Temp,y=Activity)) + geom_line(aes(group = Geno,color = Geno)) + facet_grid(Time~.) + ggtitle('Treatment means')
+p3 = ggplot(subset(contr,contrast == 'Geno_3 - Geno_1'),aes(x = Temp,y = estimate)) + geom_line(aes(color = Time,group = Time)) + ylab('Geno_3 - Geno_1') + ggtitle('Geno effects')
+p4 = ggplot(subset(three_way,Geno != 'Geno_2'),aes(x=Temp,y=Activity)) + geom_line(aes(group = Geno,color = Geno)) + facet_grid(Time~.) + ggtitle('Treatment means')
+plot_grid(p2,p1,ncol=2)
+plot_grid(p4,p3)
+```
+
+```{r,fig.width=6,fig.height=3}
+contr = as.data.frame(summary(emmeans(lm3,trt.vs.ctrl~Time|Temp:Geno)$contrasts))
+p1 = ggplot(subset(contr,contrast == 'Time_2 - Time_1' & Geno %in% c('Geno_1','Geno_3')),aes(x = Temp,y = estimate)) + geom_line(aes(color = Geno,group = Geno)) + ylab('Time_2 - Time_1') + ggtitle('Time effects') + scale_color_brewer(type = 'qual')
+p2 = ggplot(subset(three_way,Geno != 'Geno_2'),aes(x=Temp,y=Activity)) + geom_line(aes(group = Time,color = Time)) + facet_grid(Geno~.) + ggtitle('Treatment means')
+# p3 = ggplot(subset(contr,contrast == 'Geno_3 - Geno_1'),aes(x = Temp,y = estimate)) + geom_line(aes(color = Time,group = Time)) + ylab('Geno_3 - Geno_1') + ggtitle('Geno effects')
+# p4 = ggplot(subset(three_way,Geno != 'Geno_2'),aes(x=Temp,y=Activity)) + geom_line(aes(group = Geno,color = Geno)) + facet_grid(Time~.) + ggtitle('Treatment means')
+plot_grid(p2,p1,ncol=2) 
+# plot_grid(p4,p3)
+```

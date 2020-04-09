@@ -1,0 +1,98 @@
+---
+title: "Class 17"
+output: html_notebook
+---
+```{r}
+library(lmerTest)
+library(pbkrtest)
+library(emmeans)
+library(cowplot)
+```
+
+
+```{r}
+pulse_data = read.csv('Class1_data.csv')
+str(pulse_data)
+```
+
+```{r}
+(p_orig = ggplot(pulse_data,aes(x=Treatment,y=Pulse)) + geom_jitter(aes(color = Treatment),width = .1))
+```
+```{r}
+anova(lm(Pulse~Treatment,pulse_data))
+```
+
+```{r,fig.width=10,fig.height = 5}
+set.seed(1)
+resids = pulse_data$Pulse - c(0,10)[(pulse_data$Treatment == 'Standing')+1]
+resids = resids - mean(resids)
+pulse_data$Age = c('<25','25-35','>35')[(sapply(resids,function(x) which(rmultinom(1,1,dnorm(x,c(25,0,-25),5))==1)))]
+pulse_data$Age = factor(pulse_data$Age,levels = c('<25','25-35','>35'))
+p_block = ggplot(pulse_data,aes(x=Age,y=Pulse)) + geom_point(aes(color = Treatment),position = position_jitterdodge())
+plot_grid(p_orig,p_block)
+```
+
+```{r}
+anova(lm(Pulse~Age+Treatment,pulse_data))
+```
+```{r}
+anova(lm(Pulse~Treatment,pulse_data))
+```
+
+```{r,fig.width=10,fig.height = 5}
+pulse_data$Corrected_Pulse = resid(lm(Pulse~Age,pulse_data)) + mean(pulse_data$Pulse)
+block_means = data.frame(Age = 1:3,mean = tapply(pulse_data$Pulse,pulse_data$Age,mean),xmin = 1:3-.3,xmax = 1:3+.3)
+p_block_corr = ggplot(pulse_data,aes(x=Age,y=Corrected_Pulse)) + geom_point(aes(color = Treatment),position = position_jitterdodge()) + ylim(range(pulse_data$Pulse))
+plot_grid(p_block +  geom_errorbarh(data = block_means,aes(xmin = xmin,xmax = xmax,y=mean,height=0)),p_block_corr +  geom_errorbarh(data = block_means,aes(xmin = xmin,xmax = xmax,y=mean(mean),height=0)))
+```
+```{r,fig.width=10,fig.height = 5}
+p_corr = ggplot(pulse_data,aes(x=Treatment,y=Corrected_Pulse)) + geom_jitter(aes(color = Treatment),width = .1) + ylim(range(pulse_data$Pulse)) + ylab('Pulse corrected for Age')
+plot_grid(p_orig,p_corr)
+```
+
+
+
+
+```{r}
+set.seed(3)
+pulse_data$age = (150-pulse_data$Pulse - mean(pulse_data$Pulse ) + c(0,10)[(pulse_data$Treatment == 'Standing')+1])/6 + rnorm(nrow(pulse_data),0,2) + 35
+```
+
+```{r}
+ggplot(pulse_data,aes(x=age,y=Pulse)) + geom_point(aes(color=Treatment)) + geom_smooth(aes(group = Treatment,color=Treatment),se=F,method='lm')
+```
+```{r,fig.width=10,fig.height=4}
+p1 = ggplot(pulse_data,aes(x=Treatment,y=Pulse)) + geom_jitter(aes(color = Treatment),width = .1)
+pulse_data$corrected_Pulse = resid(lm(Pulse~age,pulse_data)) + mean(pulse_data$Pulse)
+p2 = ggplot(pulse_data,aes(x=Treatment,y=corrected_Pulse)) + geom_jitter(aes(color = Treatment),width = .1) + ylim(range(pulse_data$Pulse))
+plot_grid(p1,p2)
+```
+
+```{r}
+anova(lm(Pulse~Treatment,pulse_data))
+```
+```{r}
+anova(lm(Pulse~age+Treatment,pulse_data))
+```
+
+```{r}
+set.seed(6)
+pulse_data$age2 = pulse_data$age
+i = pulse_data$Treatment == 'Standing'
+pulse_data$age2[i] = rnorm(sum(i),mean(pulse_data$age2[!i]),sd(pulse_data$age[!i]))
+ggplot(pulse_data,aes(x=age2,y=Pulse)) + geom_point(aes(color=Treatment)) + geom_smooth(aes(group = Treatment,color=Treatment),se=F,method='lm')
+```
+```{r}
+emmeans(lm(Pulse~age2*Treatment,pulse_data),revpairwise~Treatment)$contrasts
+```
+```{r}
+emmeans(lm(Pulse~age2*Treatment,pulse_data),revpairwise~Treatment,at=list(age2=36))$contrasts
+```
+```{r}
+emmeans(lm(Pulse~age2*Treatment,pulse_data),revpairwise~Treatment,at=list(age2=48))$contrasts
+```
+
+```{r}
+anova(lm(Pulse~age2*Treatment,pulse_data))
+```
+

@@ -1,0 +1,77 @@
+---
+title: "Class 3"
+output:
+  html_notebook:
+    toc: true
+    toc_float: true
+---
+
+## Pulse data
+```{r}
+library(ggplot2)
+pulse_data <- read.csv('Pulse experiment response.csv')
+colnames(pulse_data)[3] = 'Pulse'
+set.seed(1)
+ggplot(pulse_data,aes(x=Treatment,y=Pulse)) + geom_jitter(size=2,width = .1,alpha = 0.5)  +
+     stat_summary(fun.y='mean', colour="darkred", geom="errorbar", aes(ymax = ..y.., ymin = ..y..))
+```
+
+
+
+## t-test on pulse data
+```{r}
+standing_obs = subset(pulse_data,Treatment == 'Standing')$Pulse
+sitting_obs = subset(pulse_data,Treatment == 'Sitting')$Pulse
+t_test = t.test(standing_obs, sitting_obs, paired = F, var.equal = T)
+t_test
+```
+
+
+## Effects of sample size of confidence intervals
+```{r}
+n = 2:16
+alpha = 0.05
+sigma = 1
+t_c = qt(alpha/2,n-1,lower.tail=F)
+SE = sigma / sqrt(n)
+interval = SE * t_c
+
+data = data.frame(t_c = t_c, SE = SE, interval = interval)
+par(mfrow=c(1,2))
+plot(n,SE,type='l',main = expression(hat('SE')),ylim = c(0,max(SE)),lwd=2,col='blue'); abline(h=0)
+plot(n,t_c,type='l',main = expression(t[paste(frac(alpha,2),n-1)]),ylim = c(0,max(t_c)),lwd=2,col='blue'); abline(h=0)
+par(mfrow=c(1,1))
+plot(n,interval,type='l',main = expression(paste(t[paste(frac(alpha,2),n-1)],'*',hat('SE'))),ylim = c(0,max(interval)),lwd=2,col='blue'); abline(h=0)
+
+```
+```{r}
+interval[match(c(2,4,8,16),n)]
+interval[n==2]/interval[n==4]
+interval[n==4]/interval[n==8]
+interval[n==8]/interval[n==16]
+```
+
+## histograms
+```{r}
+library(ggplot2)
+breaks = seq(30,130,by=5)
+ggplot(pulse_data,aes(x=Pulse)) + 
+  geom_histogram(binwidth = 8, center = 2.5,color = 'black',fill = 'grey70') + 
+  facet_grid(Treatment~.)
+
+# same, but re-scaled to percentages
+ggplot(pulse_data,aes(x=Pulse)) + 
+    geom_histogram(aes(y=..density..),binwidth = 8, center = 2.5,color = 'black',fill = 'grey70') + 
+    facet_grid(Treatment~.) + 
+    ggtitle('Probability plot')
+```
+## qqplots
+```{r}
+qqnorm(standing_obs,main = 'Standing data')
+qqline(standing_obs)
+
+qqnorm(sitting_obs,main = 'Sitting data')
+qqline(sitting_obs)
+
+```
+

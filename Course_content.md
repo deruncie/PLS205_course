@@ -20,6 +20,8 @@ HW keys are provided, but I highly recommend that you work the the HW problems f
 | 9    | means comparisons in split plots, incomplete block designs                                          | 17,18 (part from 2019 video) | [Lab 9](https://github.com/deruncie/PLS205_course/tree/master/Labs/Lab_9)   | [HW 8](https://github.com/deruncie/PLS205_course/tree/master/HW/HW8) |
 | 10   | covariates, missing data                                                                            | 19,20                        | [Lab 10](https://github.com/deruncie/PLS205_course/tree/master/Labs/Lab_10) |                                                                      |
 
+Additional lecture materials for each class are available here: [Class notes](https://github.com/deruncie/PLS205_course/tree/master/Lectures)
+
 <script>var clicky_site_ids = clicky_site_ids || []; clicky_site_ids.push(101246412);</script>
 <script async src="//static.getclicky.com/js"></script>
 <noscript><p><img alt="Clicky" width="1" height="1" src="//in.getclicky.com/101246412ns.gif" /></p></noscript>

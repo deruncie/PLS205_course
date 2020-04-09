@@ -1,0 +1,33 @@
+---
+title: "Class 1"
+output: html_notebook
+---
+
+Load Roster
+```{r}
+class = read.csv('Class_roster.csv',header = F,stringsAsFactors = F)[-c(1,2),1]
+# length(class)
+class = unname(sapply(class,function(x) paste(strsplit(x,', ')[[1]][2:1],collapse=' ')))
+class
+```
+
+Do randomization
+```{r}
+set.seed(1)
+group = rep(c('Sit','Stand'),each = length(class)/2)
+randomization = sample(group)
+sitting_group = class[randomization == 'Sit']
+sitting_group
+```
+
+```{r}
+library(googlesheets4)
+library(ggplot2)
+suppressPackageStartupMessages(library("dplyr"))
+pulse_data = read_sheet('https://docs.google.com/spreadsheets/d/1CkfvqTSFrOX-Gwk5pIijkFxBtDbyEZcCf1LJ4Cvdw3I/edit#gid=1764344714')
+colnames(pulse_data)[3] = 'Pulse'
+pulse_data = na.omit(pulse_data)
+ggplot(pulse_data,aes(x=Treatment,y=Pulse)) + geom_jitter(width=.25,height=0)
+```
+
+

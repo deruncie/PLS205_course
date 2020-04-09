@@ -1,0 +1,178 @@
+---
+title: "Class 15"
+output: html_notebook
+---
+```{r}
+library(cowplot)
+library(emmeans)
+library(lmerTest)
+library(agricolae)
+```
+
+
+## missing
+
+```{r}
+set.seed(3)
+blocks = c(10,2,5,3)
+  # sample(2*c(10:15),4,replace=T)
+trt = c(1,0,-2)
+data = expand.grid(Block = factor(1:length(blocks)),Trt = LETTERS[length(trt):1])
+data$y = blocks[data$Block] + trt[data$Trt] + sample(c(-1,0,1),nrow(data),replace=T)
+anova(lm(y~Block+Trt,data[-1,]))
+t(matrix(data$y,nc=length(trt)))
+data_m = data[-1,]
+``` 
+
+```{r}
+ggplot(data_m,aes(x=Trt,y=y)) + geom_jitter(width=0.02,size=2)
+ggplot(data_m,aes(x=Trt,y=y)) + geom_jitter(aes(color=Block),width=.02,size=2)
+```
+
+
+```{r}
+ggplot(data_m,aes(x=Block,y=y)) + geom_line(aes(color=Trt,group=Trt))
+```
+```{r}
+aggregate(y~Trt,data_m,FUN=mean)
+```
+```{r}
+emmeans(lm(y~Block+Trt,data_m),~Trt)
+```
+```{r}
+contrast(emmeans(lm(y~Block+Trt,data_m),~Trt),method='pairwise')
+```
+```{r}
+anova(lm(y~Block+Trt,data_m))
+s2 = 0.5639
+sqrt(s2/3)
+sqrt(s2/4)
+sqrt(s2/3+s2/4)
+sqrt(2*s2/4)
+
+sqrt(0.4598460^2 + 0.3754627^2)
+
+d = expand.grid(B=LETTERS[1:7],T = letters[1:5])
+# d = d[sample(1:nrow(d),25),]
+d = d[-1,]
+d$y = rnorm(nrow(d))
+emmeans(lm(y~B+T,d),~T)
+contrast(emmeans(lm(y~B+T,d),~T),'pairwise')
+table(d$T)
+dim(d)
+```
+```{r}
+sqrt(0.43730/6)
+sqrt(0.43730/7)
+sqrt(0.43730/7+0.43730/6)
+0.4954278^2*4
+0.7250588^2*2
+sqrt(0.7283282^2+0.6313955^2)
+var(resid(lm(y~B+T,d)))
+anova(lm(y~B+T,d))
+```
+
+
+```{r}
+lm1 = lm(y~Block+Trt,data_m)
+anova(lm1)
+```
+
+```{r}
+lm_switch = lm(y~Trt+Block,data_m)
+anova(lm_switch)
+```
+
+```{r}
+lme1 = lmer(y~Trt + (1|Block),data_m)
+anova(lme1,ddf='K')
+```
+
+## unconnected
+```{r}
+data = read.csv('unconnected.csv',colClasses = c('factor','factor','numeric'))
+str(data)
+```
+```{r}
+table(data$Block,data$Trt)
+```
+
+```{r}
+lm1 = lm(y~Block+Trt,data)
+emmeans(lm1,pairwise~Trt)$contrasts
+```
+
+## augmented
+```{r}
+set.seed(1)
+Checks = LETTERS[1:3]
+b = 4
+nT = b*3
+checks = design.rcbd(trt=Checks,r = b)$book
+checks$Check = T
+colnames(checks)[3] = 'Trt'
+str(checks)
+new_trts = data.frame(plots = NA,block = gl(b,nT/b),Trt = factor(1:(nT)),Check = F)
+data_aug = rbind(checks,new_trts)
+b_means = rnorm(b)
+trts = rnorm(length(unique(data_aug$Trt)))
+data_aug$y = b_means[data_aug$block] + trts[data_aug$Trt]+rnorm(nrow(data_aug))
+```
+
+```{r}
+with(data_aug,table(block,Trt))
+```
+
+
+```{r}
+lm1 = lm(y~block+Trt,data_aug)
+anova(lm1)
+```
+
+```{r}
+levels(data_aug$Trt)
+```
+```{r}
+emmeans(lm1,trt.vs.ctrl~Trt,ref = 1)$contrast
+pairs(emmeans(lm1,'Trt',at = list(Trt=c('1','2'))))
+pairs(emmeans(lm1,'Trt',at = list(Trt=c('1','8'))))
+emmeans(lm1,trt.vs.ctrl~Trt,ref = 1:3)$contrast
+# contrast(emmeans(lme1,'Trt',mode='k'),'trt.vs.ctrl',ref=1:3)
+```
+```{r}
+plot(trts,as.data.frame(summary(emmeans(lm1,'Trt')))$emmean);abline(0,1)
+```
+
+
+## BIBD
+```{r}
+library(agricolae)
+data = design.bib(trt=LETTERS[1:3],k=2,r=4)$book
+colnames(data)[3] = 'Trt'
+bs = rnorm(length(unique(data$block)))
+ts = rnorm(length(unique(data$Trt)))
+data$y = ts[data$Trt] + 1*bs[data$block] + rnorm(nrow(data))
+
+lm1 = lm(y~block+Trt,data)
+lme1 = lmer(y~(1|block)+Trt,data)
+VarCorr(lme1)
+
+emmeans(lm1,pairwise~Trt)$contrasts
+emmeans(lme1,pairwise~Trt,mode='s')$contrasts
+```
+
+```{r}
+ve1 = summary(lm1)$sigma^2
+vcov2 = as.data.frame(VarCorr(lme1))$vcov
+
+k = 2
+t = length(ts)
+r = nrow(data)/t
+e = (k-1)/k*t/(t-1)
+sqrt(2*ve1/(r*e))
+s21 = 2*vcov2[2]/(r*e)
+s22 = 2*(vcov2[2] + k*vcov2[1])/(r*(1-e))
+sqrt(1/(1/s21 + 1/s22))
+```
+
+

@@ -1,0 +1,94 @@
+---
+title: "Class 14"
+output: html_notebook
+---
+
+## RCBD
+```{r}
+set.seed(5)
+nG = 4
+data = expand.grid(Block = factor(1:nG),Insecticide = c('A','B'),Plot = 1:12)
+G = rnorm(nG,0,5)
+GT = rnorm(nG*2,0,3)
+GT[3] = 50
+data$Yield = 40 + c(0,5)[data$Insecticide] + G[data$Block] + GT[interaction(data$Block,data$Insecticide)] + rnorm(nrow(data),0,4)
+data$Plot = interaction(data$Plot,data$Insecticide,data$Block)
+ggplot(data,aes(x=Block,y=Yield)) + geom_jitter(aes(color = Insecticide),position = position_dodge(width = .25))
+```
+
+```{r}
+lme1 = lmer(Yield~Block*Insecticide+(1|Block:Insecticide),data)
+anova(lme1,ddf='K')
+```
+
+# simple effects as replicates
+```{r}
+library(emmeans)
+effects = as.data.frame(summary(rbind(emmeans(lme1,pairwise~Insecticide|Block)$contrast)))
+estimates = as.data.frame(summary(emmeans(lme1,~Insecticide:Block)))
+p1 = ggplot(estimates,aes(x=Insecticide,y=emmean)) + geom_line(aes(group = Block)) + ylab('Yield') + theme_cowplot()
+p2 = ggplot(effects,aes(x='Rep')) +  geom_point(aes(y=estimate)) + ylab(expression(delta[i])) + xlab('') + theme_cowplot() + expand_limits(y=0) +
+  geom_hline(yintercept = 0)#geom_histogram(breaks = seq(-3,11,by=2),fill='grey90',col=1) +
+cowplot::plot_grid(p1,p2)
+```
+
+
+```{r,fig.width=10}
+set.seed(5)
+nG = 20
+data = expand.grid(Block = factor(1:nG),Insecticide = c('A','B'),Plot = 1:12)
+G = rnorm(nG,0,5)
+GT = rnorm(nG*2,0,3)
+# GT[3] = 50
+data$Yield = 40 + c(0,5)[data$Insecticide] + G[data$Block] + GT[interaction(data$Block,data$Insecticide)] + rnorm(nrow(data),0,4)
+data$Plot = interaction(data$Plot,data$Insecticide,data$Block)
+
+lme1 = lmer(Yield~Block*Insecticide+(1|Block:Insecticide),data)
+effects = as.data.frame(summary(rbind(emmeans(lme1,pairwise~Insecticide|Block)$contrast)))
+estimates = as.data.frame(summary(emmeans(lme1,~Insecticide:Block)))
+data$Block = factor(data$Block,levels = order(effects$estimate,decreasing = T))
+p1 = ggplot(data,aes(x=Block,y=Yield)) + geom_boxplot(aes(color = Insecticide),position = position_dodge(width = .25))
+# p1 = ggplot(estimates,aes(x=Insecticide,y=emmean)) + geom_line(aes(group = Block)) + ylab('Yield') + theme_cowplot()
+p2 = ggplot(effects,aes(x='Rep')) +  geom_point(aes(y=estimate)) + ylab(expression(delta[i])) + xlab('') + theme_cowplot() + expand_limits(y=0) +
+  geom_hline(yintercept = 0)#geom_histogram(breaks = seq(-3,11,by=2),fill='grey90',col=1) +
+cowplot::plot_grid(p1,p2)
+
+```
+
+
+## Average G:T
+```{r}
+mean_data = aggregate(Yield~Block+Insecticide+Plot,data,FUN=mean)
+anova(lm(Yield ~ Block * Insecticide,mean_data))
+```
+
+
+## Mixed effect anova
+```{r}
+library(lmerTest)
+library(pbkrtest)
+lme2 = lmer(Yield ~ Insecticide + Block + (1|Block:Insecticide) + (1|Plot),data)
+anova(lme2,ddf='K')
+```
+
+```{r}
+anova(lme1,ddf='K')
+```
+
+## compare to t-test of effects
+```{r}
+t.test(effects$estimate)
+```
+
+
+## Insecticide effects
+```{r}
+lme1_means = emmeans(lme1,specs = 'Insecticide',lmer.df = 'K')
+summary(contrast(lme1_means,method='pairwise'),infer = c(F,T))
+```
+
+```{r}
+# summary(emmeans(lme2,pairwise~Insecticide)$contrast)
+lme2_means = emmeans(lme2,specs = 'Insecticide',lmer.df = 'K')
+summary(contrast(lme2_means,method='pairwise'),infer = c(F,T))
+```

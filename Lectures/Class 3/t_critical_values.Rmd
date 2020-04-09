@@ -1,0 +1,51 @@
+---
+title: "t-distribution critical values"
+output: 
+  html_document:
+    runtime: shiny
+---
+
+
+T-critical values by sample size and alpha
+```{r,echo=FALSE}
+library(shiny)
+library(QuickShinyApp)
+example_t = function(n = 10,alpha = 0.05,main = NULL,addNorm = 'No') {
+  
+  # calculate critical values
+  critical_values <- qt(c(alpha/2,1-alpha/2),n-1)
+  
+  # make plot
+  par(mar=c(10,6,3,1))
+  if(is.null(main)) main = paste('n=',n)
+  
+  x = seq(-4.5,4.5,length=100)
+  dt = dt(x,n-1)
+  plot(x,dt,ylim = c(0,0.4),ylab = 'Density', xlab = '', cex.lab = 2,cex.main=2,type='l',xaxt='n',main = main)
+  mtext(expression(frac(bar(y) - mu,s/sqrt(n))),1,5,cex=2)
+  axis(1,at=c(critical_values,0),labels = expression(t[paste(alpha/2,',',n-1)],t[paste(1-alpha/2,',',n-1)],0),cex.axis=2)
+  axis(1,at=c(critical_values),labels = signif(critical_values,3),cex.axis=2,pos=-.05,tick=F,lty=0)
+  axis(1,at=seq(-4,4,by=1),labels=F)
+  
+  x_region = seq(critical_values[1],critical_values[2],length=500)
+  polygon(c(x_region,x_region[500:1]),y = c(dt(x_region,n-1),rep(0,500)),border=NULL,col = colors()[122])
+  abline(v=critical_values,lwd=2)
+  if(addNorm == 'Yes'){
+    n_crit = qnorm(c(alpha/2,1-alpha/2))
+    arrows(n_crit,0,n_crit,dnorm(n_crit),length=0,col = 'brown',lwd=2)
+    lines(x,dnorm(x),col = 'brown',lwd=2)
+  }
+  
+  text(0,0.1,sprintf('area = %0.3f',1-alpha),cex=2.5)
+}
+
+inputPanel(
+  sliderInput('n','n',2,50,5),
+  sliderInput('alpha','alpha',0,.2,0.05),
+  radioButtons('addNorm','add Normal',c('No','Yes'))
+)
+renderPlot({
+  print(names(input))
+  example_t(n = input$n, alpha = input$alpha,main = sprintf('n=%d',input$n),addNorm = input$addNorm)
+},height=500)
+```
