@@ -2,7 +2,7 @@
 
 Note: In some cases, the first lecture of the following week is needed to finish the HW assigned the previous week. 
 
-I highly recommend that you work the the HW problems first, and then look at the key after. 
+HW keys are provided, but I highly recommend that you work the the HW problems first without looking at the key. 
 
 <iframe src="https://www.kaltura.com/p/1770401/sp/177040100/embedIframeJs/uiconf_id/24976411/partner_id/1770401/widget_id/0_yrtz9g1b?iframeembed=true&playerId=kaltura_player_&flashvars[playlistAPI.kpl0Id]=0_pzw7unv8&flashvars[ks]=&&flashvars[imageDefaultDuration]=30&flashvars[mediaProtocol]=rtmp&flashvars[streamerType]=rtmp&flashvars[streamerUrl]=rtmp://www.kaltura.com:1935&flashvars[rtmpFlavors]=1&flashvars[localizationCode]=en&flashvars[leadWithHTML5]=true&flashvars[nextPrevBtn.plugin]=true&flashvars[sideBarContainer.plugin]=true&flashvars[sideBarContainer.position]=left&flashvars[sideBarContainer.clickToClose]=true&flashvars[chapters.plugin]=true&flashvars[chapters.layout]=vertical&flashvars[chapters.thumbnailRotator]=false&flashvars[streamSelector.plugin]=true&flashvars[EmbedPlayer.SpinnerTarget]=videoHolder&flashvars[dualScreen.plugin]=true&flashvars[playlistAPI.playlistUrl]=https://video.ucdavis.edu/playlist/details/{playlistAPI.kpl0Id}" width="740" height="330" allowfullscreen webkitallowfullscreen mozAllowFullScreen allow="autoplay *; fullscreen *; encrypted-media *" sandbox="allow-forms allow-same-origin allow-scripts allow-top-navigation allow-pointer-lock allow-popups allow-modals allow-orientation-lock allow-popups-to-escape-sandbox allow-presentation allow-top-navigation-by-user-activation" frameborder="0" title="Kaltura Player"></iframe>
 
