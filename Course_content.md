@@ -1,6 +1,6 @@
 ## Course Material
 
-Note: In some cases, the first lecture of the following week is needed to finish the HW assigned the previous week. 
+Note: In some cases the first lecture of the following week is needed to finish the HW assigned the previous week. 
 
 HW keys are provided, but I highly recommend that you work the the HW problems first without looking at the key. 
 
