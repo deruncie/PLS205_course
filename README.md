@@ -1,6 +1,6 @@
 ## PLS 205 - Experimental Design and Analysis
 
-This course is taught by [Dr. Daniel Runcie](runcielab.ucdavis.edu) at UC Davis during the winter quarter. 
+This course is taught by [Daniel Runcie](runcielab.ucdavis.edu) at UC Davis during the winter quarter. 
 
 The goal of this course is to introduce graduate students in the biological sciences to the fundamental concepts and statistical methods necessary to plan, conduct, and interpret effective experiments.
 
