@@ -2,12 +2,12 @@
 
 This course is taught by [Daniel Runcie](runcielab.ucdavis.edu) at UC Davis during the winter quarter. 
 
-The goal of this course is to introduce graduate students in the biological sciences to the fundamental concepts and statistical methods necessary to plan, conduct, and interpret effective experiments.
+The goal of this course is to introduce graduate students in the biological sciences to the fundamental concepts and introductory statistical methods necessary to plan, conduct, and interpret effective experiments.
 
 ### Course Format
 The course consists of two 1.5-hour lectures, one hour of computer laboratory, and one homework assignment per week.  
 
-The [Online Course](Course_content.md) contains all lectures, lab tutorials and homework assigments from Winter Quarter 2020. The material is grouped into weekly blocks consisting of two lectures, one lab, and one homework. General topics for each week are listed.
+The [Online Course](Course_content.md) contains all lectures, lab tutorials and homework assignments from Winter Quarter 2020. The material is grouped into weekly blocks consisting of two lectures, one lab, and one homework. General topics for each week are listed.
 
 ### General course outline
 

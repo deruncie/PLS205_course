@@ -1,0 +1,88 @@
+---
+title: "Intro to R, RStudio and R Notebooks"
+author: Daniel Runcie
+output:
+  html_notebook:
+    toc: yes
+    toc_float: yes
+---
+## The R language
+This course will demonstrate the statistical analyses using the R. R is a powerfull open-source (free) 
+computer programing language that is designed specifically for doing statistics. R is highly extendable
+and there are huge libraries of programs people have developed using R for almost any type of analysis imaginable.
+There is also a very large community of R users who post and answer R programing questions online.
+
+## RStudio and R Notebooks
+We will be doing all excersises in the lab in RStudio using R Notebooks. 
+
+**RStudio** is a specially designed environment for working with R. RStudio makes many of the lower-level
+operations in R easier - writing scripts, keeping track of files, making plots, and finding help. There are also
+many advanced tools for debugging code and developing R packages and stand-alone applications.
+
+You can download RStudio on your personal computer here:
+[http://www.rstudio.com/ide/download/](http://www.rstudio.com/ide/download/)
+(Note that RStudio requires R to also be installed on your computer). 
+
+**R Notebooks** are like a word-processor for R programing. **We will use R Notebooks for all assignments in this class.**
+Notebooks let you freely type text and R code in the same document, and then run the code and paste in the output (statistics, tables, plots) 
+automatically in the notebook as you write. R Notebooks only work in RStudio version >= 1.0, so update if needed.
+
+### Opening RStudio
+When RStudio opens, if gives you 4 panes:
+
+- **Source pane** (Top-left). This is where you write your R documents.
+- **Console pane** (Bottom-left). This is a direct access to R. You can test out R code here before inserting it into your document
+- **Environment / History pane** (Top-right). This pane has tabs that keep track of all variables and commands you've used in this session.
+- **Files / Plots / Packages / Help pane** (Bottom-right). This pane has tabs to show your plots, organize files, or search *help*
+
+This layout is fully customizable.
+
+### Starting a new R Notebook.
+
+If you're looking at the file `Introduction_to_R.Rmd`, you're looking at an R Notebook. 
+You can see this by looking for the line: `output: html_notebook` at the top of the document. 
+
+To make a new Notebook, choose File -> New File -> R Notebook:
+
+By default, the Notebook opens *docked* in the top-left pane of R Studio. This layout is too cluttered for me. 
+I prefer to *pop out* notebooks into a new window, and make it full-screen. I switch back to the main RStudio window 
+to use the help viewer or console when necessary, but otherwise do all my work directly in the Notebook.
+
+To *pop out* the notebook, clock the button with an arrow pointing up-right (third from left under the `Introduction_to_R.Rmd` tab).
+Another trick: If you click the botton on the far-right of the notebook's header bar, it'll give you a click-able table of contents
+that you can use to jump around the notebook.
+
+### How do you use R Notebooks?
+
+R notebook instructions can be found [here](http://rmarkdown.rstudio.com/r_notebooks.html), or [here](https://www.youtube.com/watch?v=TJmNvfhLCoI)
+
+Below is a code chunk. Code chunks contain R code that is ready to run. 
+Try executing this chunk by clicking the *Run* button within the chunk (green arrow pointing right)
+or by placing your cursor inside it and pressing *Ctrl + Alt + Enter* (Mac: *Cmd + Option + Return*). 
+
+
+```{r}
+plot(cars)
+3+4
+print('Hello World!')
+```
+
+You can also:
+
+- run any single line by putting your cursor in the line and typing "Ctrl + Enter"
+- copy the R code from the chunk and paste into the **Console** and hit **Enter**
+- type the code into the **Console**
+
+Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Ctrl(Mac:Cmd)+Option+I*.
+**Note:** The code chunks must be run in order, because some of them rely on variables created in previous chunks
+
+When you save the notebook, an HTML file containing the code and output will be saved alongside it 
+(click the *Preview* button or press *Cmd+Shift+K* to preview the HTML file).
+
+The HTML file has `code` buttons (one at the top, and one for each code chunk). 
+Clicking this will show/hide code which can clean up the display.
+
+You'll be making documents like this for you homework and exams. Labs will be written in Notebooks,
+so use these to become familiar with this language. 
+There are many useful R Markdown resources online, and in RStudio itself. 
+
