@@ -19,3 +19,7 @@ I highly recommend that you work the the HW problems first, and then look at the
 | 8    | Generalized RCBD, Block:Trt interactions, crossed, nested and aliased variables, split plot designs | 15,16                        | [Lab 8](https://github.com/deruncie/PLS205_course/tree/master/Labs/Lab_8)   | [HW 7](https://github.com/deruncie/PLS205_course/tree/master/HW/HW7) |
 | 9    | means comparisons in split plots, incomplete block designs                                          | 17,18 (part from 2019 video) | [Lab 9](https://github.com/deruncie/PLS205_course/tree/master/Labs/Lab_9)   | [HW 8](https://github.com/deruncie/PLS205_course/tree/master/HW/HW8) |
 | 10   | covariates, missing data                                                                            | 19,20                        | [Lab 10](https://github.com/deruncie/PLS205_course/tree/master/Labs/Lab_10) |                                                                      |
+
+
+<script>var clicky_site_ids = clicky_site_ids || []; clicky_site_ids.push(101246412);</script>
+<script async src="//static.getclicky.com/js"></script>
